@@ -106,18 +106,26 @@ export const createUsageTracker = (): UsageTracker => {
 
   const totals = new Map<string, number>()
   let interval: NodeJS.Timeout | null = null
-  const tickMs = 5000
+  const tickMs = 1000
+  let lastAppId: string | null = null
+  let lastTimestamp = Date.now()
 
-  const record = (appId: string, deltaSeconds: number) => {
+  const record = (appId: string | null, deltaSeconds: number) => {
+    if (!appId) return
     const today = new Date().toISOString().slice(0, 10)
     const key = `${today}:${appId}`
     totals.set(key, (totals.get(key) ?? 0) + deltaSeconds)
   }
 
   const poll = async () => {
+    const now = Date.now()
+    const elapsedSeconds = Math.max(0, (now - lastTimestamp) / 1000)
+    record(lastAppId, elapsedSeconds)
+    lastTimestamp = now
+
     const active = await getActiveApp()
     const mapped = active ? processMap[active.process] ?? 'other' : 'other'
-    record(mapped, tickMs / 1000)
+    lastAppId = mapped
   }
 
   interval = setInterval(poll, tickMs)

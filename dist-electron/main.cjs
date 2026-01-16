@@ -25,10 +25,82 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var electron = __toESM(require("electron"), 1);
 var import_node_path = __toESM(require("node:path"), 1);
 
-// electron/telemetry.ts
+// electron/notifications.ts
 var import_node_child_process = require("node:child_process");
 var import_node_util = require("node:util");
 var execFileAsync = (0, import_node_util.promisify)(import_node_child_process.execFile);
+var appIdMap = [
+  { match: /microsoft\.microsoftedge|msedge/i, appId: "msedge" },
+  { match: /chrome/i, appId: "chrome" },
+  { match: /discord/i, appId: "discord" },
+  { match: /spotify/i, appId: "spotify" },
+  { match: /steam/i, appId: "steam" },
+  { match: /teams/i, appId: "teams" },
+  { match: /outlook/i, appId: "outlook" }
+];
+var mapAppId = (raw) => {
+  if (!raw) return "other";
+  const found = appIdMap.find((entry) => entry.match.test(raw));
+  return found?.appId ?? "other";
+};
+var queryNotificationEvents = async (sinceIso) => {
+  const script = `
+$since = Get-Date "${sinceIso}"
+$events = Get-WinEvent -LogName Microsoft-Windows-Notifications-Platform/Operational -ErrorAction SilentlyContinue |
+  Where-Object { $_.TimeCreated -gt $since } |
+  Select-Object -First 200
+$events | ForEach-Object {
+  $xml = [xml]$_.ToXml()
+  $data = $xml.Event.EventData.Data
+  $appId = ($data | Where-Object { $_.Name -eq 'AppId' -or $_.Name -eq 'AppUserModelId' -or $_.Name -eq 'PackageFullName' } | Select-Object -First 1).'#text'
+  [PSCustomObject]@{ appId = $appId; time = $_.TimeCreated }
+} | ConvertTo-Json -Compress
+`;
+  const { stdout } = await execFileAsync("powershell", [
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-Command",
+    script
+  ]);
+  if (!stdout) return [];
+  try {
+    const parsed = JSON.parse(stdout);
+    if (Array.isArray(parsed)) return parsed;
+    return [parsed];
+  } catch {
+    return [];
+  }
+};
+var createNotificationTracker = () => {
+  let lastPoll = new Date(Date.now() - 6e4).toISOString();
+  const counts = /* @__PURE__ */ new Map();
+  const poll = async () => {
+    const events = await queryNotificationEvents(lastPoll);
+    lastPoll = (/* @__PURE__ */ new Date()).toISOString();
+    for (const event of events) {
+      const appKey = mapAppId(event.appId);
+      counts.set(appKey, (counts.get(appKey) ?? 0) + 1);
+    }
+  };
+  const getSummary = async () => {
+    await poll();
+    const perApp = {};
+    for (const [appId, count] of counts.entries()) {
+      perApp[appId] = count;
+    }
+    return {
+      total: Object.values(perApp).reduce((sum, value) => sum + value, 0),
+      perApp
+    };
+  };
+  return { getSummary };
+};
+
+// electron/telemetry.ts
+var import_node_child_process2 = require("node:child_process");
+var import_node_util2 = require("node:util");
+var execFileAsync2 = (0, import_node_util2.promisify)(import_node_child_process2.execFile);
 var appCatalog = [
   { id: "code", name: "VS Code", category: "Productivity", color: "#35a7ff" },
   { id: "msedge", name: "Microsoft Edge", category: "Productivity", color: "#4f8bff" },
@@ -77,7 +149,7 @@ $sb=New-Object System.Text.StringBuilder 1024
 [PSCustomObject]@{ process=$proc.ProcessName; title=$sb.ToString() } | ConvertTo-Json -Compress
 `;
   try {
-    const { stdout } = await execFileAsync("powershell", [
+    const { stdout } = await execFileAsync2("powershell", [
       "-NoProfile",
       "-ExecutionPolicy",
       "Bypass",
@@ -100,16 +172,23 @@ var createUsageTracker = () => {
   appLookup.set(unknownApp.id, unknownApp);
   const totals = /* @__PURE__ */ new Map();
   let interval = null;
-  const tickMs = 5e3;
+  const tickMs = 1e3;
+  let lastAppId = null;
+  let lastTimestamp = Date.now();
   const record = (appId, deltaSeconds) => {
+    if (!appId) return;
     const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
     const key = `${today}:${appId}`;
     totals.set(key, (totals.get(key) ?? 0) + deltaSeconds);
   };
   const poll = async () => {
+    const now = Date.now();
+    const elapsedSeconds = Math.max(0, (now - lastTimestamp) / 1e3);
+    record(lastAppId, elapsedSeconds);
+    lastTimestamp = now;
     const active = await getActiveApp();
     const mapped = active ? processMap[active.process] ?? "other" : "other";
-    record(mapped, tickMs / 1e3);
+    lastAppId = mapped;
   };
   interval = setInterval(poll, tickMs);
   poll();
@@ -142,6 +221,7 @@ var { app, BrowserWindow } = electron;
 var { ipcMain } = electron;
 var isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 var usageTracker = createUsageTracker();
+var notificationTracker = createNotificationTracker();
 var createWindow = async () => {
   const mainWindow = new BrowserWindow({
     width: 1240,
@@ -170,19 +250,8 @@ var createWindow = async () => {
 };
 app.whenReady().then(() => {
   ipcMain.handle("usage:snapshot", () => usageTracker.getSnapshot());
-  ipcMain.handle("suggestions:list", () => [
-    {
-      id: "focus-1",
-      title: "Schedule a focus block",
-      detail: "Apps with frequent switches detected. Try a 30\u2011minute focus block."
-    },
-    {
-      id: "break-1",
-      title: "Take micro breaks",
-      detail: "You have been active continuously for over an hour. Add a 5\u2011minute break."
-    }
-  ]);
-  ipcMain.handle("notifications:summary", () => ({ total: 0, perApp: {} }));
+  ipcMain.handle("suggestions:list", () => []);
+  ipcMain.handle("notifications:summary", () => notificationTracker.getSummary());
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -1,5 +1,4 @@
 import * as electron from 'electron'
-import { apps, usageEntries, suggestions } from '../src/data/mock'
 
 const { contextBridge, ipcRenderer } = electron
 
@@ -11,8 +10,8 @@ const api = {
     } catch {
       return {
         generatedAt: new Date().toISOString(),
-        apps,
-        usageEntries,
+        apps: [],
+        usageEntries: [],
       }
     }
   },
@@ -20,21 +19,16 @@ const api = {
     try {
       return await ipcRenderer.invoke('suggestions:list')
     } catch {
-      return suggestions
+      return []
     }
   },
   getNotificationSummary: async () => {
     try {
       return await ipcRenderer.invoke('notifications:summary')
     } catch {
-      const counts = usageEntries.reduce<Record<string, number>>((acc, entry) => {
-        acc[entry.appId] = (acc[entry.appId] ?? 0) + entry.notifications
-        return acc
-      }, {})
-
       return {
-        total: Object.values(counts).reduce((sum, value) => sum + value, 0),
-        perApp: counts,
+        total: 0,
+        perApp: {},
       }
     }
   },

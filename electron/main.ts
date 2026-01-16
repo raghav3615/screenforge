@@ -1,5 +1,6 @@
 import * as electron from 'electron'
 import path from 'node:path'
+import { createNotificationTracker } from './notifications'
 import { createUsageTracker } from './telemetry'
 
 const { app, BrowserWindow } = electron
@@ -8,6 +9,7 @@ const { ipcMain } = electron
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
 
 const usageTracker = createUsageTracker()
+const notificationTracker = createNotificationTracker()
 
 const createWindow = async () => {
   const mainWindow = new BrowserWindow({
@@ -40,19 +42,8 @@ const createWindow = async () => {
 
 app.whenReady().then(() => {
   ipcMain.handle('usage:snapshot', () => usageTracker.getSnapshot())
-  ipcMain.handle('suggestions:list', () => [
-    {
-      id: 'focus-1',
-      title: 'Schedule a focus block',
-      detail: 'Apps with frequent switches detected. Try a 30‑minute focus block.',
-    },
-    {
-      id: 'break-1',
-      title: 'Take micro breaks',
-      detail: 'You have been active continuously for over an hour. Add a 5‑minute break.',
-    },
-  ])
-  ipcMain.handle('notifications:summary', () => ({ total: 0, perApp: {} }))
+  ipcMain.handle('suggestions:list', () => [])
+  ipcMain.handle('notifications:summary', () => notificationTracker.getSummary())
 
   createWindow()
 

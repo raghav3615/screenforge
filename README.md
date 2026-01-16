@@ -36,6 +36,14 @@ Run the packaged Electron main process (after build):
 npm run electron:start
 ```
 
+Build a Windows EXE installer:
+
+```
+npm run dist
+```
+
 ## Windows data collection
 
-The app now captures the active foreground app every 5 seconds using Windows APIs and aggregates usage locally for the current session. Notification counts are still mocked and should be replaced with a real notification capture pipeline.
+The app captures the active foreground app every 5 seconds using Windows APIs and aggregates usage locally for the current session. Notification counts are pulled from the Windows Notifications Platform event log and summarized per app.
+
+If notification counts remain at 0, ensure the Windows Notifications Platform/Operational log is enabled in Event Viewer.

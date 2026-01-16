@@ -1,9 +1,9 @@
-import { apps, usageEntries, suggestions } from '../data/mock'
+import type { AppInfo, SuggestionItem, UsageEntry } from '../types/models'
 
 export interface UsageSnapshot {
   generatedAt: string
-  apps: typeof apps
-  usageEntries: typeof usageEntries
+  apps: AppInfo[]
+  usageEntries: UsageEntry[]
 }
 
 export const fetchUsageSnapshot = async (): Promise<UsageSnapshot> => {
@@ -13,17 +13,17 @@ export const fetchUsageSnapshot = async (): Promise<UsageSnapshot> => {
 
   return {
     generatedAt: new Date().toISOString(),
-    apps,
-    usageEntries,
+    apps: [],
+    usageEntries: [],
   }
 }
 
-export const fetchSuggestions = async () => {
+export const fetchSuggestions = async (): Promise<SuggestionItem[]> => {
   if (window.screenforge?.getSuggestionFeed) {
     return window.screenforge.getSuggestionFeed()
   }
 
-  return suggestions
+  return []
 }
 
 export const fetchNotificationSummary = async () => {
@@ -31,13 +31,8 @@ export const fetchNotificationSummary = async () => {
     return window.screenforge.getNotificationSummary()
   }
 
-  const counts = usageEntries.reduce<Record<string, number>>((acc, entry) => {
-    acc[entry.appId] = (acc[entry.appId] ?? 0) + entry.notifications
-    return acc
-  }, {})
-
   return {
-    total: Object.values(counts).reduce((sum, value) => sum + value, 0),
-    perApp: counts,
+    total: 0,
+    perApp: {},
   }
 }

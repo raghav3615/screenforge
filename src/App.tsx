@@ -113,6 +113,18 @@ const App = () => {
       const appTotals = getAppTotals(snapshot.usageEntries, snapshot.apps)
       const notifications = getNotificationTotals(snapshot.usageEntries, snapshot.apps)
       const notificationMap = new Map(notifications.map((row) => [row.app.id, row.notifications]))
+      if (notificationSummary?.perApp) {
+        for (const [appId, count] of Object.entries(notificationSummary.perApp)) {
+          if (typeof count === 'number' && Number.isFinite(count)) {
+            notificationMap.set(appId, count)
+          }
+        }
+      }
+
+      const summaryRows = snapshot.apps
+        .map((app) => ({ app, notifications: notificationMap.get(app.id) ?? 0 }))
+        .filter((row) => row.notifications > 0)
+        .sort((a, b) => b.notifications - a.notifications)
 
       return {
         dailyTotals: totals,
@@ -125,9 +137,9 @@ const App = () => {
           minutes: Math.round(row.minutes / Math.max(totals.length, 1)),
           notifications: notificationMap.get(row.app.id) ?? 0,
         })),
-        notificationRows: notifications,
+        notificationRows: summaryRows,
       }
-    }, [snapshot])
+    }, [snapshot, notificationSummary])
 
   const chartLabels = dailyTotals.map((entry) =>
     new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
