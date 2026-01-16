@@ -1,0 +1,43 @@
+.suggestion-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.suggestion-card h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.suggestion-card p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.suggestion-card__list {
+  display: grid;
+  gap: 12px;
+}
+
+.suggestion-card__item {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--panel-bg);
+  border: 1px solid var(--card-border);
+}
+
+.suggestion-card__title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.suggestion-card__detail {
+  color: var(--text-muted);
+  font-size: 13px;
+}

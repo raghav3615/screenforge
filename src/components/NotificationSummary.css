@@ -1,0 +1,57 @@
+.notification-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.notification-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notification-card__header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.notification-card__header p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.notification-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notification-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.notification-card__row:last-child {
+  border-bottom: none;
+}
+
+.notification-card__app {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification-card__count {
+  font-weight: 600;
+}
