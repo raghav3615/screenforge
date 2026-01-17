@@ -1,0 +1,12 @@
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.insight-card__metric--success {
+  color: #2ed47a;
+}

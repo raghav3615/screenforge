@@ -1,4 +1,4 @@
-import type { AppInfo, SuggestionItem, UsageEntry } from '../types/models'
+import type { AppInfo, SuggestionItem, UsageEntry, NotificationSummary } from '../types/models'
 
 export interface UsageSnapshot {
   generatedAt: string
@@ -26,7 +26,7 @@ export const fetchSuggestions = async (): Promise<SuggestionItem[]> => {
   return []
 }
 
-export const fetchNotificationSummary = async () => {
+export const fetchNotificationSummary = async (): Promise<NotificationSummary> => {
   if (window.screenforge?.getNotificationSummary) {
     return window.screenforge.getNotificationSummary()
   }

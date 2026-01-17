@@ -1,0 +1,142 @@
+.apps-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.apps-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.apps-search::placeholder {
+  color: var(--text-muted);
+}
+
+.apps-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.apps-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.apps-sort button {
+  background: var(--panel-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.apps-sort button:hover,
+.apps-sort button.active {
+  background: var(--accent);
+  color: #0b0d12;
+  border-color: var(--accent);
+}
+
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.apps-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.app-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.app-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-card__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.app-card__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-card__name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.app-card__category {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.app-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.app-card__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-card__stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.app-card__stat-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.app-card__bar {
+  height: 6px;
+  background: var(--panel-bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.app-card__bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}

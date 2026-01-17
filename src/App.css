@@ -81,6 +81,12 @@
   height: 0;
 }
 
+.main__header-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -8px;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
