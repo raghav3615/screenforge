@@ -97,6 +97,10 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
       }
     }, [snapshot, notificationSummary])
 
+  const activeAppName = snapshot?.activeAppId
+    ? snapshot.apps.find((app) => app.id === snapshot.activeAppId)?.name ?? 'Other apps'
+    : 'No active app'
+
   const chartLabels = dailyTotals.map((entry) =>
     new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
   )
@@ -217,15 +221,13 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
         {notificationSummary && <NotificationSummary total={notificationSummary.total} rows={notificationRows.slice(0, 6)} />}
       </section>
 
-      <section className="grid grid--three">
+        <section className="grid grid--three">
         <SuggestionPanel items={suggestions} />
         <div className="card insight-card">
-          <h3>Top app today</h3>
-          <p>{appRows[0]?.app.name ?? 'No data yet'}</p>
-          <div className="insight-card__metric">
-            {appRows[0] ? formatMinutes(appRows[0].minutes) : '—'}
-          </div>
-          <p>Your most used application</p>
+            <h3>Active app</h3>
+            <p>{activeAppName}</p>
+            <div className="insight-card__metric">Live</div>
+            <p>Currently on screen</p>
         </div>
         <div className="card insight-card">
           <h3>Session status</h3>

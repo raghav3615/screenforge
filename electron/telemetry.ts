@@ -23,12 +23,27 @@ export interface UsageEntry {
 interface ActiveAppSample {
   process: string
   title: string
+  isMinimized: boolean
+  isVisible: boolean
 }
 
 interface UsageTracker {
   apps: AppInfo[]
-  getSnapshot: () => { apps: AppInfo[]; usageEntries: UsageEntry[] }
+  getSnapshot: () => {
+    apps: AppInfo[]
+    usageEntries: UsageEntry[]
+    activeAppId: string | null
+    runningApps: RunningAppSummary[]
+  }
+  clearData: () => void
   dispose: () => void
+}
+
+export interface RunningAppSummary {
+  process: string
+  appId: string
+  count: number
+  hasWindow: boolean
 }
 
 // Extended app catalog with more common Windows applications
@@ -177,32 +192,140 @@ public class Win32 {
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll", SetLastError=true)] public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int count);
   [DllImport("user32.dll", SetLastError=true)] public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+  
+  [StructLayout(LayoutKind.Sequential)]
+  public struct RECT {
+    public int Left, Top, Right, Bottom;
+  }
+  
+  public const int GWL_STYLE = -16;
+  public const int WS_MINIMIZE = 0x20000000;
 }
 '@
 $hWnd=[Win32]::GetForegroundWindow()
+if ($hWnd -eq [IntPtr]::Zero) {
+  [PSCustomObject]@{ process=$null; title=$null; isMinimized=$true; isVisible=$false } | ConvertTo-Json -Compress
+  return
+}
 $pid=0
 [Win32]::GetWindowThreadProcessId($hWnd,[ref]$pid) | Out-Null
 $proc=Get-Process -Id $pid -ErrorAction SilentlyContinue
 $sb=New-Object System.Text.StringBuilder 1024
 [Win32]::GetWindowText($hWnd,$sb,$sb.Capacity) | Out-Null
-[PSCustomObject]@{ process=$proc.ProcessName; title=$sb.ToString() } | ConvertTo-Json -Compress
+$title=$sb.ToString()
+
+# Check if window is minimized using IsIconic or window style
+$isIconic=[Win32]::IsIconic($hWnd)
+$style=[Win32]::GetWindowLong($hWnd, [Win32]::GWL_STYLE)
+$isMinByStyle=($style -band [Win32]::WS_MINIMIZE) -ne 0
+$isMinimized=$isIconic -or $isMinByStyle
+
+# Check if window is visible
+$isVisible=[Win32]::IsWindowVisible($hWnd)
+
+# Also check window rect - if width or height is 0, it's not really visible
+$rect=New-Object Win32+RECT
+$gotRect=[Win32]::GetWindowRect($hWnd, [ref]$rect)
+$hasSize=$false
+if ($gotRect) {
+  $width=$rect.Right - $rect.Left
+  $height=$rect.Bottom - $rect.Top
+  $hasSize=($width -gt 0) -and ($height -gt 0)
+}
+
+[PSCustomObject]@{ 
+  process=$proc.ProcessName
+  title=$title
+  isMinimized=$isMinimized
+  isVisible=($isVisible -and $hasSize -and (-not $isMinimized))
+} | ConvertTo-Json -Compress
 `
 
   try {
-    const { stdout } = await execFileAsync('powershell', [
-      '-NoProfile',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-Command',
-      script,
-    ])
+    const { stdout } = await execFileAsync(
+      'powershell',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-WindowStyle',
+        'Hidden',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        script,
+      ],
+      {
+        windowsHide: true,
+        timeout: 2000,
+        maxBuffer: 1024 * 1024,
+      }
+    )
 
-    if (!stdout) return null
-    const parsed = JSON.parse(stdout) as ActiveAppSample
+    const raw = (stdout ?? '').trim()
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as ActiveAppSample
     if (!parsed?.process) return null
     return parsed
   } catch {
     return null
+  }
+}
+
+const getRunningApps = async (): Promise<Array<{ process: string; count: number; hasWindow: boolean }>> => {
+  if (process.platform !== 'win32') return []
+
+  const script = `
+$ignored = @(
+  'Idle','System','Registry','smss','csrss','wininit','services','lsass','svchost','fontdrvhost',
+  'dwm','winlogon','conhost','dllhost','taskhostw','spoolsv','RuntimeBroker','SearchIndexer',
+  'SecurityHealthService','WmiPrvSE','sihost','audiodg'
+)
+
+$procs = Get-Process -ErrorAction SilentlyContinue |
+  Where-Object { $_.ProcessName -and ($ignored -notcontains $_.ProcessName) } |
+  Select-Object ProcessName, MainWindowTitle
+
+$groups = $procs | Group-Object ProcessName | ForEach-Object {
+  $hasWindow = ($_.Group | Where-Object { $_.MainWindowTitle -and $_.MainWindowTitle.Trim().Length -gt 0 } | Measure-Object).Count -gt 0
+  [PSCustomObject]@{ process=$_.Name; count=$_.Count; hasWindow=$hasWindow }
+}
+
+$groups | Sort-Object count -Descending | Select-Object -First 80 | ConvertTo-Json -Compress
+`
+
+  try {
+    const { stdout } = await execFileAsync(
+      'powershell',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-WindowStyle',
+        'Hidden',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        script,
+      ],
+      {
+        windowsHide: true,
+        timeout: 4000,
+        maxBuffer: 4 * 1024 * 1024,
+      }
+    )
+
+    const raw = (stdout ?? '').trim()
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as
+      | Array<{ process: string; count: number; hasWindow: boolean }>
+      | { process: string; count: number; hasWindow: boolean }
+
+    return Array.isArray(parsed) ? parsed : [parsed]
+  } catch {
+    return []
   }
 }
 
@@ -230,6 +353,8 @@ export const createUsageTracker = (): UsageTracker => {
   const tickMs = 1000
   let lastAppId: string | null = null
   let lastTimestamp = Date.now()
+  let activeAppId: string | null = null
+  let runningApps: RunningAppSummary[] = []
 
   const record = (appId: string | null, deltaSeconds: number) => {
     if (!appId || deltaSeconds <= 0) return
@@ -238,8 +363,22 @@ export const createUsageTracker = (): UsageTracker => {
     totals.set(key, (totals.get(key) ?? 0) + deltaSeconds)
   }
 
-  const resolveAppId = (active: ActiveAppSample | null) => {
-    if (!active?.process) return unknownApp.id
+  const resolveAppId = (active: ActiveAppSample | null): string | null => {
+    if (!active?.process) return null
+    
+    // CRITICAL: Don't track minimized or invisible windows
+    // Only track windows that are actually visible on screen
+    if (active.isMinimized || !active.isVisible) {
+      return null
+    }
+    
+    // Skip tracking the ScreenForge app itself or Electron
+    const processLower = active.process.toLowerCase()
+    if (processLower === 'electron' || processLower === 'screenforge' || 
+        active.title?.toLowerCase().includes('screenforge')) {
+      return null
+    }
+    
     const mapped = mapProcessToAppId(active.process)
     if (mapped && appLookup.has(mapped)) return mapped
     const dynamicId = `proc:${active.process.toLowerCase()}`
@@ -254,18 +393,64 @@ export const createUsageTracker = (): UsageTracker => {
     return dynamicId
   }
 
+  // Separate function for running apps that doesn't require visibility check
+  const resolveAppIdForRunningApps = (processName: string): string | null => {
+    if (!processName) return null
+    
+    const processLower = processName.toLowerCase()
+    if (processLower === 'electron' || processLower === 'screenforge') {
+      return null
+    }
+    
+    const mapped = mapProcessToAppId(processName)
+    if (mapped && appLookup.has(mapped)) return mapped
+    const dynamicId = `proc:${processName.toLowerCase()}`
+    if (!appLookup.has(dynamicId)) {
+      appLookup.set(dynamicId, {
+        id: dynamicId,
+        name: toDisplayName(processName),
+        category: 'Other',
+        color: '#6b7280',
+      })
+    }
+    return dynamicId
+  }
+
+  const refreshRunningApps = async () => {
+    const raw = await getRunningApps()
+    runningApps = raw
+      .filter((p) => Boolean(p.process))
+      .map((p) => {
+        const appId = resolveAppIdForRunningApps(p.process)
+        return { process: p.process, appId, count: p.count, hasWindow: p.hasWindow }
+      })
+  }
+
   const poll = async () => {
     const now = Date.now()
     const elapsedSeconds = Math.max(0, (now - lastTimestamp) / 1000)
-    record(lastAppId, elapsedSeconds)
+    
+    // Only record time if there was a valid visible app
+    if (lastAppId) {
+      record(lastAppId, elapsedSeconds)
+    }
     lastTimestamp = now
 
     const active = await getActiveApp()
-    lastAppId = resolveAppId(active)
+    
+    // resolveAppId now returns null for minimized/invisible windows
+    activeAppId = resolveAppId(active)
+    lastAppId = activeAppId
   }
 
   interval = setInterval(poll, tickMs)
   poll()
+
+  // Refresh running apps periodically (less frequent than active window sampling)
+  const runningAppsInterval = setInterval(() => {
+    refreshRunningApps()
+  }, 15000)
+  refreshRunningApps()
 
   // Save data every 30 seconds
   saveInterval = setInterval(() => {
@@ -294,7 +479,11 @@ export const createUsageTracker = (): UsageTracker => {
         (app) => usedAppIds.has(app.id)
       )
 
-      return { apps, usageEntries: entries }
+      return { apps, usageEntries: entries, activeAppId, runningApps }
+    },
+    clearData: () => {
+      totals.clear()
+      savePersistedData(totals)
     },
     dispose: () => {
       if (interval) {
@@ -305,6 +494,7 @@ export const createUsageTracker = (): UsageTracker => {
         clearInterval(saveInterval)
         saveInterval = null
       }
+      clearInterval(runningAppsInterval)
       // Save on dispose
       savePersistedData(totals)
     },

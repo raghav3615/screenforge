@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { clearUsageData } from '../services/usageService'
 import type { ThemeName } from '../types/models'
 import './Settings.css'
 
@@ -122,9 +123,9 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
               <div className="setting-row__label">Clear all data</div>
               <div className="setting-row__desc">Remove all tracked usage history</div>
             </div>
-            <button className="danger-button" onClick={() => {
+            <button className="danger-button" onClick={async () => {
               if (confirm('Are you sure? This will delete all your usage data.')) {
-                localStorage.removeItem('screenforge-usage')
+                await clearUsageData()
                 window.location.reload()
               }
             }}>

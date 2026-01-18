@@ -159,8 +159,8 @@ var processPatterns = [
   { pattern: /^notepad\+\+$/i, appId: "notepad" },
   { pattern: /^windowsterminal$/i, appId: "terminal" },
   { pattern: /^wt$/i, appId: "terminal" },
-  { pattern: /^powershell$/i, appId: "terminal" },
-  { pattern: /^cmd$/i, appId: "terminal" },
+  // Note: powershell and cmd are excluded from tracking to avoid self-detection
+  // Only track Windows Terminal (windowsterminal/wt) as terminal app
   { pattern: /^slack$/i, appId: "slack" },
   { pattern: /^zoom$/i, appId: "zoom" },
   { pattern: /^notion$/i, appId: "notion" },
@@ -232,30 +232,158 @@ public class Win32 {
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll", SetLastError=true)] public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int count);
   [DllImport("user32.dll", SetLastError=true)] public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+  [DllImport("user32.dll")] public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+  [DllImport("kernel32.dll")] public static extern uint GetTickCount();
+  [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
+  
+  [StructLayout(LayoutKind.Sequential)]
+  public struct RECT { public int Left, Top, Right, Bottom; }
+  
+  [StructLayout(LayoutKind.Sequential)]
+  public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }
+  
+  public const int GWL_STYLE = -16;
+  public const int WS_MINIMIZE = 0x20000000;
+  public const int DWMWA_CLOAKED = 14;
 }
 '@
-$hWnd=[Win32]::GetForegroundWindow()
-$pid=0
-[Win32]::GetWindowThreadProcessId($hWnd,[ref]$pid) | Out-Null
-$proc=Get-Process -Id $pid -ErrorAction SilentlyContinue
-$sb=New-Object System.Text.StringBuilder 1024
-[Win32]::GetWindowText($hWnd,$sb,$sb.Capacity) | Out-Null
-[PSCustomObject]@{ process=$proc.ProcessName; title=$sb.ToString() } | ConvertTo-Json -Compress
+
+# Check idle time - if user is idle for more than 60 seconds, don't count
+$lastInput = New-Object Win32+LASTINPUTINFO
+$lastInput.cbSize = [System.Runtime.InteropServices.Marshal]::SizeOf($lastInput)
+if ([Win32]::GetLastInputInfo([ref]$lastInput)) {
+  $idleMs = [Win32]::GetTickCount() - $lastInput.dwTime
+  if ($idleMs -gt 60000) {
+    [PSCustomObject]@{ process=$null; title=$null; isMinimized=$true; isVisible=$false } | ConvertTo-Json -Compress
+    return
+  }
+}
+
+$hWnd = [Win32]::GetForegroundWindow()
+if ($hWnd -eq [IntPtr]::Zero) {
+  [PSCustomObject]@{ process=$null; title=$null; isMinimized=$true; isVisible=$false } | ConvertTo-Json -Compress
+  return
+}
+
+$procId = 0
+[Win32]::GetWindowThreadProcessId($hWnd, [ref]$procId) | Out-Null
+$proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
+if (-not $proc) {
+  [PSCustomObject]@{ process=$null; title=$null; isMinimized=$true; isVisible=$false } | ConvertTo-Json -Compress
+  return
+}
+
+$sb = New-Object System.Text.StringBuilder 512
+[Win32]::GetWindowText($hWnd, $sb, $sb.Capacity) | Out-Null
+$title = $sb.ToString()
+
+# Check if minimized
+$isIconic = [Win32]::IsIconic($hWnd)
+$style = [Win32]::GetWindowLong($hWnd, [Win32]::GWL_STYLE)
+$isMinimized = $isIconic -or (($style -band [Win32]::WS_MINIMIZE) -ne 0)
+
+# Check if visible
+$isVisibleFlag = [Win32]::IsWindowVisible($hWnd)
+
+# Check if cloaked (on another virtual desktop)
+$cloaked = 0
+$isCloaked = ([Win32]::DwmGetWindowAttribute($hWnd, [Win32]::DWMWA_CLOAKED, [ref]$cloaked, 4) -eq 0) -and ($cloaked -ne 0)
+
+# Check window has reasonable size
+$rect = New-Object Win32+RECT
+$hasSize = $false
+if ([Win32]::GetWindowRect($hWnd, [ref]$rect)) {
+  $w = $rect.Right - $rect.Left
+  $h = $rect.Bottom - $rect.Top
+  $hasSize = ($w -gt 50) -and ($h -gt 50)
+}
+
+$isVisible = $isVisibleFlag -and $hasSize -and (-not $isMinimized) -and (-not $isCloaked)
+
+[PSCustomObject]@{ 
+  process = $proc.ProcessName
+  title = $title
+  isMinimized = $isMinimized
+  isVisible = $isVisible
+} | ConvertTo-Json -Compress
 `;
   try {
-    const { stdout } = await execFileAsync2("powershell", [
-      "-NoProfile",
-      "-ExecutionPolicy",
-      "Bypass",
-      "-Command",
-      script
-    ]);
-    if (!stdout) return null;
-    const parsed = JSON.parse(stdout);
+    const { stdout } = await execFileAsync2(
+      "powershell",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-WindowStyle",
+        "Hidden",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        script
+      ],
+      {
+        windowsHide: true,
+        timeout: 2e3,
+        maxBuffer: 1024 * 1024
+      }
+    );
+    const raw = (stdout ?? "").trim();
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
     if (!parsed?.process) return null;
     return parsed;
   } catch {
     return null;
+  }
+};
+var getRunningApps = async () => {
+  if (process.platform !== "win32") return [];
+  const script = `
+$ignored = @(
+  'Idle','System','Registry','smss','csrss','wininit','services','lsass','svchost','fontdrvhost',
+  'dwm','winlogon','conhost','dllhost','taskhostw','spoolsv','RuntimeBroker','SearchIndexer',
+  'SecurityHealthService','WmiPrvSE','sihost','audiodg','powershell','pwsh'
+)
+
+$procs = Get-Process -ErrorAction SilentlyContinue |
+  Where-Object { $_.ProcessName -and ($ignored -notcontains $_.ProcessName) } |
+  Select-Object ProcessName, MainWindowTitle
+
+$groups = $procs | Group-Object ProcessName | ForEach-Object {
+  $hasWindow = ($_.Group | Where-Object { $_.MainWindowTitle -and $_.MainWindowTitle.Trim().Length -gt 0 } | Measure-Object).Count -gt 0
+  [PSCustomObject]@{ process=$_.Name; count=$_.Count; hasWindow=$hasWindow }
+}
+
+$groups | Sort-Object count -Descending | Select-Object -First 80 | ConvertTo-Json -Compress
+`;
+  try {
+    const { stdout } = await execFileAsync2(
+      "powershell",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-WindowStyle",
+        "Hidden",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        script
+      ],
+      {
+        windowsHide: true,
+        timeout: 4e3,
+        maxBuffer: 4 * 1024 * 1024
+      }
+    );
+    const raw = (stdout ?? "").trim();
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch {
+    return [];
   }
 };
 var mapProcessToAppId = (processName) => {
@@ -278,6 +406,8 @@ var createUsageTracker = () => {
   const tickMs = 1e3;
   let lastAppId = null;
   let lastTimestamp = Date.now();
+  let activeAppId = null;
+  let runningApps = [];
   const record = (appId, deltaSeconds) => {
     if (!appId || deltaSeconds <= 0) return;
     const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
@@ -285,7 +415,14 @@ var createUsageTracker = () => {
     totals.set(key, (totals.get(key) ?? 0) + deltaSeconds);
   };
   const resolveAppId = (active) => {
-    if (!active?.process) return unknownApp.id;
+    if (!active?.process) return null;
+    if (active.isMinimized || !active.isVisible) {
+      return null;
+    }
+    const processLower = active.process.toLowerCase();
+    if (processLower === "electron" || processLower === "screenforge" || processLower === "powershell" || processLower === "pwsh" || active.title?.toLowerCase().includes("screenforge")) {
+      return null;
+    }
     const mapped = mapProcessToAppId(active.process);
     if (mapped && appLookup.has(mapped)) return mapped;
     const dynamicId = `proc:${active.process.toLowerCase()}`;
@@ -299,16 +436,49 @@ var createUsageTracker = () => {
     }
     return dynamicId;
   };
+  const resolveAppIdForRunningApps = (processName) => {
+    if (!processName) return null;
+    const processLower = processName.toLowerCase();
+    if (processLower === "electron" || processLower === "screenforge" || processLower === "powershell" || processLower === "pwsh" || processLower === "cmd" || processLower === "conhost") {
+      return null;
+    }
+    const mapped = mapProcessToAppId(processName);
+    if (mapped && appLookup.has(mapped)) return mapped;
+    const dynamicId = `proc:${processName.toLowerCase()}`;
+    if (!appLookup.has(dynamicId)) {
+      appLookup.set(dynamicId, {
+        id: dynamicId,
+        name: toDisplayName(processName),
+        category: "Other",
+        color: "#6b7280"
+      });
+    }
+    return dynamicId;
+  };
+  const refreshRunningApps = async () => {
+    const raw = await getRunningApps();
+    runningApps = raw.filter((p) => Boolean(p.process)).map((p) => {
+      const appId = resolveAppIdForRunningApps(p.process) ?? "other";
+      return { process: p.process, appId, count: p.count, hasWindow: p.hasWindow };
+    });
+  };
   const poll = async () => {
     const now = Date.now();
     const elapsedSeconds = Math.max(0, (now - lastTimestamp) / 1e3);
-    record(lastAppId, elapsedSeconds);
+    if (lastAppId) {
+      record(lastAppId, elapsedSeconds);
+    }
     lastTimestamp = now;
     const active = await getActiveApp();
-    lastAppId = resolveAppId(active);
+    activeAppId = resolveAppId(active);
+    lastAppId = activeAppId;
   };
   interval = setInterval(poll, tickMs);
   poll();
+  const runningAppsInterval = setInterval(() => {
+    refreshRunningApps();
+  }, 15e3);
+  refreshRunningApps();
   saveInterval = setInterval(() => {
     savePersistedData(totals);
   }, 3e4);
@@ -330,7 +500,11 @@ var createUsageTracker = () => {
       const apps = Array.from(appLookup.values()).filter(
         (app3) => usedAppIds.has(app3.id)
       );
-      return { apps, usageEntries: entries };
+      return { apps, usageEntries: entries, activeAppId, runningApps };
+    },
+    clearData: () => {
+      totals.clear();
+      savePersistedData(totals);
     },
     dispose: () => {
       if (interval) {
@@ -341,6 +515,7 @@ var createUsageTracker = () => {
         clearInterval(saveInterval);
         saveInterval = null;
       }
+      clearInterval(runningAppsInterval);
       savePersistedData(totals);
     }
   };
@@ -439,6 +614,10 @@ var createWindow = async () => {
 };
 app2.whenReady().then(() => {
   ipcMain.handle("usage:snapshot", () => usageTracker.getSnapshot());
+  ipcMain.handle("usage:clear", () => {
+    usageTracker.clearData();
+    return usageTracker.getSnapshot();
+  });
   ipcMain.handle("suggestions:list", () => generateSuggestions());
   ipcMain.handle("notifications:summary", () => notificationTracker.getSummary());
   createWindow();

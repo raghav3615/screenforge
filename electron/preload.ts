@@ -12,6 +12,8 @@ const api = {
         generatedAt: new Date().toISOString(),
         apps: [],
         usageEntries: [],
+        activeAppId: null,
+        runningApps: [],
       }
     }
   },
@@ -20,6 +22,19 @@ const api = {
       return await ipcRenderer.invoke('suggestions:list')
     } catch {
       return []
+    }
+  },
+  clearUsageData: async () => {
+    try {
+      return await ipcRenderer.invoke('usage:clear')
+    } catch {
+      return {
+        generatedAt: new Date().toISOString(),
+        apps: [],
+        usageEntries: [],
+        activeAppId: null,
+        runningApps: [],
+      }
     }
   },
   getNotificationSummary: async () => {

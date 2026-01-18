@@ -14,6 +14,13 @@ const Apps = ({ snapshot }: AppsProps) => {
   const [sortBy, setSortBy] = useState<SortBy>('time')
   const [search, setSearch] = useState('')
 
+  const runningNow = useMemo(() => {
+    const items = snapshot?.runningApps ?? []
+    return [...items]
+      .sort((a, b) => (b.hasWindow ? 1 : 0) - (a.hasWindow ? 1 : 0) || b.count - a.count)
+      .slice(0, 24)
+  }, [snapshot])
+
   const { appList, totalMinutes, dailyCount } = useMemo(() => {
     if (!snapshot || snapshot.usageEntries.length === 0) {
       return { appList: [], totalMinutes: 0, dailyCount: 0 }
@@ -52,6 +59,29 @@ const Apps = ({ snapshot }: AppsProps) => {
           <div className="topbar__subtitle">All tracked applications</div>
         </div>
       </header>
+
+      <section className="running-now">
+        <div className="running-now__header">
+          <div className="running-now__title">Running now</div>
+          <div className="running-now__sub">
+            Foreground + background processes (Windows)
+          </div>
+        </div>
+        {runningNow.length === 0 ? (
+          <div className="running-now__empty">No running apps detected yet.</div>
+        ) : (
+          <div className="running-now__list">
+            {runningNow.map((p) => (
+              <div key={`${p.process}:${p.count}:${p.hasWindow}`} className="running-now__pill">
+                <span className="running-now__name">{p.process}</span>
+                <span className="running-now__meta">
+                  {p.hasWindow ? 'window' : 'bg'} · {p.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="apps-controls">
         <input

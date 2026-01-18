@@ -1,9 +1,11 @@
-import type { AppInfo, SuggestionItem, UsageEntry, NotificationSummary } from '../types/models'
+import type { AppInfo, SuggestionItem, UsageEntry, NotificationSummary, RunningAppSummary } from '../types/models'
 
 export interface UsageSnapshot {
   generatedAt: string
   apps: AppInfo[]
   usageEntries: UsageEntry[]
+  activeAppId?: string | null
+  runningApps?: RunningAppSummary[]
 }
 
 export const fetchUsageSnapshot = async (): Promise<UsageSnapshot> => {
@@ -15,6 +17,22 @@ export const fetchUsageSnapshot = async (): Promise<UsageSnapshot> => {
     generatedAt: new Date().toISOString(),
     apps: [],
     usageEntries: [],
+    activeAppId: null,
+    runningApps: [],
+  }
+}
+
+export const clearUsageData = async (): Promise<UsageSnapshot> => {
+  if (window.screenforge?.clearUsageData) {
+    return window.screenforge.clearUsageData()
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    apps: [],
+    usageEntries: [],
+    activeAppId: null,
+    runningApps: [],
   }
 }
 

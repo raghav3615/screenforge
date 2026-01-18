@@ -16,6 +16,13 @@ export interface UsageEntry {
   notifications: number
 }
 
+export interface RunningAppSummary {
+  process: string
+  appId: string
+  count: number
+  hasWindow: boolean
+}
+
 export interface SuggestionItem {
   id: string
   title: string

@@ -119,6 +119,10 @@ const createWindow = async () => {
 
 app.whenReady().then(() => {
   ipcMain.handle('usage:snapshot', () => usageTracker.getSnapshot())
+  ipcMain.handle('usage:clear', () => {
+    usageTracker.clearData()
+    return usageTracker.getSnapshot()
+  })
   ipcMain.handle('suggestions:list', () => generateSuggestions())
   ipcMain.handle('notifications:summary', () => notificationTracker.getSummary())
 
