@@ -159,8 +159,8 @@ var processPatterns = [
   { pattern: /^notepad\+\+$/i, appId: "notepad" },
   { pattern: /^windowsterminal$/i, appId: "terminal" },
   { pattern: /^wt$/i, appId: "terminal" },
-  // Note: powershell and cmd are excluded from tracking to avoid self-detection
-  // Only track Windows Terminal (windowsterminal/wt) as terminal app
+  { pattern: /^powershell$/i, appId: "terminal" },
+  { pattern: /^cmd$/i, appId: "terminal" },
   { pattern: /^slack$/i, appId: "slack" },
   { pattern: /^zoom$/i, appId: "zoom" },
   { pattern: /^notion$/i, appId: "notion" },
@@ -228,88 +228,26 @@ var getActiveApp = async () => {
 Add-Type @'
 using System;
 using System.Runtime.InteropServices;
-public class Win32 {
+using System.Text;
+public class ForegroundWindow {
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-  [DllImport("user32.dll", SetLastError=true)] public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int count);
-  [DllImport("user32.dll", SetLastError=true)] public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
-  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
-  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
-  [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
-  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-  [DllImport("user32.dll")] public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-  [DllImport("kernel32.dll")] public static extern uint GetTickCount();
-  [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
-  
-  [StructLayout(LayoutKind.Sequential)]
-  public struct RECT { public int Left, Top, Right, Bottom; }
-  
-  [StructLayout(LayoutKind.Sequential)]
-  public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }
-  
-  public const int GWL_STYLE = -16;
-  public const int WS_MINIMIZE = 0x20000000;
-  public const int DWMWA_CLOAKED = 14;
+  [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+  [DllImport("user32.dll", SetLastError=true)] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 }
 '@
-
-# Check idle time - if user is idle for more than 60 seconds, don't count
-$lastInput = New-Object Win32+LASTINPUTINFO
-$lastInput.cbSize = [System.Runtime.InteropServices.Marshal]::SizeOf($lastInput)
-if ([Win32]::GetLastInputInfo([ref]$lastInput)) {
-  $idleMs = [Win32]::GetTickCount() - $lastInput.dwTime
-  if ($idleMs -gt 60000) {
-    [PSCustomObject]@{ process=$null; title=$null; isMinimized=$true; isVisible=$false } | ConvertTo-Json -Compress
-    return
-  }
-}
-
-$hWnd = [Win32]::GetForegroundWindow()
+$hWnd = [ForegroundWindow]::GetForegroundWindow()
 if ($hWnd -eq [IntPtr]::Zero) {
-  [PSCustomObject]@{ process=$null; title=$null; isMinimized=$true; isVisible=$false } | ConvertTo-Json -Compress
-  return
+  Write-Output '{"process":null,"title":null,"isMinimized":false,"isVisible":true}'
+  exit
 }
-
 $procId = 0
-[Win32]::GetWindowThreadProcessId($hWnd, [ref]$procId) | Out-Null
+[ForegroundWindow]::GetWindowThreadProcessId($hWnd, [ref]$procId) | Out-Null
 $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
-if (-not $proc) {
-  [PSCustomObject]@{ process=$null; title=$null; isMinimized=$true; isVisible=$false } | ConvertTo-Json -Compress
-  return
-}
-
 $sb = New-Object System.Text.StringBuilder 512
-[Win32]::GetWindowText($hWnd, $sb, $sb.Capacity) | Out-Null
+[ForegroundWindow]::GetWindowText($hWnd, $sb, $sb.Capacity) | Out-Null
 $title = $sb.ToString()
-
-# Check if minimized
-$isIconic = [Win32]::IsIconic($hWnd)
-$style = [Win32]::GetWindowLong($hWnd, [Win32]::GWL_STYLE)
-$isMinimized = $isIconic -or (($style -band [Win32]::WS_MINIMIZE) -ne 0)
-
-# Check if visible
-$isVisibleFlag = [Win32]::IsWindowVisible($hWnd)
-
-# Check if cloaked (on another virtual desktop)
-$cloaked = 0
-$isCloaked = ([Win32]::DwmGetWindowAttribute($hWnd, [Win32]::DWMWA_CLOAKED, [ref]$cloaked, 4) -eq 0) -and ($cloaked -ne 0)
-
-# Check window has reasonable size
-$rect = New-Object Win32+RECT
-$hasSize = $false
-if ([Win32]::GetWindowRect($hWnd, [ref]$rect)) {
-  $w = $rect.Right - $rect.Left
-  $h = $rect.Bottom - $rect.Top
-  $hasSize = ($w -gt 50) -and ($h -gt 50)
-}
-
-$isVisible = $isVisibleFlag -and $hasSize -and (-not $isMinimized) -and (-not $isCloaked)
-
-[PSCustomObject]@{ 
-  process = $proc.ProcessName
-  title = $title
-  isMinimized = $isMinimized
-  isVisible = $isVisible
-} | ConvertTo-Json -Compress
+$name = if ($proc) { $proc.ProcessName } else { $null }
+@{ process=$name; title=$title; isMinimized=$false; isVisible=$true } | ConvertTo-Json -Compress
 `;
   try {
     const { stdout } = await execFileAsync2(
@@ -326,7 +264,7 @@ $isVisible = $isVisibleFlag -and $hasSize -and (-not $isMinimized) -and (-not $i
       ],
       {
         windowsHide: true,
-        timeout: 2e3,
+        timeout: 3e3,
         maxBuffer: 1024 * 1024
       }
     );
@@ -345,19 +283,31 @@ var getRunningApps = async () => {
 $ignored = @(
   'Idle','System','Registry','smss','csrss','wininit','services','lsass','svchost','fontdrvhost',
   'dwm','winlogon','conhost','dllhost','taskhostw','spoolsv','RuntimeBroker','SearchIndexer',
-  'SecurityHealthService','WmiPrvSE','sihost','audiodg','powershell','pwsh'
+  'SecurityHealthService','WmiPrvSE','sihost','audiodg','ctfmon','SearchHost','StartMenuExperienceHost',
+  'ShellExperienceHost','TextInputHost','LockApp','ApplicationFrameHost','SystemSettings',
+  'WidgetService','Widgets','PhoneExperienceHost','UserOOBEBroker','CredentialUIBroker'
 )
 
 $procs = Get-Process -ErrorAction SilentlyContinue |
   Where-Object { $_.ProcessName -and ($ignored -notcontains $_.ProcessName) } |
-  Select-Object ProcessName, MainWindowTitle
+  Select-Object ProcessName, MainWindowHandle, MainWindowTitle
 
 $groups = $procs | Group-Object ProcessName | ForEach-Object {
-  $hasWindow = ($_.Group | Where-Object { $_.MainWindowTitle -and $_.MainWindowTitle.Trim().Length -gt 0 } | Measure-Object).Count -gt 0
+  $hasWindow = ($_.Group | Where-Object { 
+    $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -and $_.MainWindowTitle.Trim().Length -gt 0 
+  } | Measure-Object).Count -gt 0
   [PSCustomObject]@{ process=$_.Name; count=$_.Count; hasWindow=$hasWindow }
 }
 
-$groups | Sort-Object count -Descending | Select-Object -First 80 | ConvertTo-Json -Compress
+$sorted = $groups | Sort-Object @{Expression={$_.hasWindow}; Descending=$true}, @{Expression={$_.count}; Descending=$true}
+$result = $sorted | Select-Object -First 80
+if ($result -eq $null) {
+  Write-Output '[]'
+} elseif ($result -is [array]) {
+  $result | ConvertTo-Json -Compress
+} else {
+  ConvertTo-Json @($result) -Compress
+}
 `;
   try {
     const { stdout } = await execFileAsync2(
@@ -416,11 +366,8 @@ var createUsageTracker = () => {
   };
   const resolveAppId = (active) => {
     if (!active?.process) return null;
-    if (active.isMinimized || !active.isVisible) {
-      return null;
-    }
     const processLower = active.process.toLowerCase();
-    if (processLower === "electron" || processLower === "screenforge" || processLower === "powershell" || processLower === "pwsh" || active.title?.toLowerCase().includes("screenforge")) {
+    if (processLower === "electron" || processLower === "screenforge" || active.title?.toLowerCase().includes("screenforge")) {
       return null;
     }
     const mapped = mapProcessToAppId(active.process);
@@ -439,7 +386,7 @@ var createUsageTracker = () => {
   const resolveAppIdForRunningApps = (processName) => {
     if (!processName) return null;
     const processLower = processName.toLowerCase();
-    if (processLower === "electron" || processLower === "screenforge" || processLower === "powershell" || processLower === "pwsh" || processLower === "cmd" || processLower === "conhost") {
+    if (processLower === "electron" || processLower === "screenforge") {
       return null;
     }
     const mapped = mapProcessToAppId(processName);
@@ -458,17 +405,18 @@ var createUsageTracker = () => {
   const refreshRunningApps = async () => {
     const raw = await getRunningApps();
     runningApps = raw.filter((p) => Boolean(p.process)).map((p) => {
-      const appId = resolveAppIdForRunningApps(p.process) ?? "other";
+      const appId = resolveAppIdForRunningApps(p.process);
       return { process: p.process, appId, count: p.count, hasWindow: p.hasWindow };
-    });
+    }).filter((p) => p.appId !== null);
   };
   const poll = async () => {
     const now = Date.now();
     const elapsedSeconds = Math.max(0, (now - lastTimestamp) / 1e3);
-    if (lastAppId) {
-      record(lastAppId, elapsedSeconds);
-    }
     lastTimestamp = now;
+    if (lastAppId && elapsedSeconds > 0) {
+      const cappedSeconds = Math.min(elapsedSeconds, 60);
+      record(lastAppId, cappedSeconds);
+    }
     const active = await getActiveApp();
     activeAppId = resolveAppId(active);
     lastAppId = activeAppId;
@@ -477,7 +425,7 @@ var createUsageTracker = () => {
   poll();
   const runningAppsInterval = setInterval(() => {
     refreshRunningApps();
-  }, 15e3);
+  }, 5e3);
   refreshRunningApps();
   saveInterval = setInterval(() => {
     savePersistedData(totals);
@@ -488,12 +436,19 @@ var createUsageTracker = () => {
       const entries = [];
       const usedAppIds = /* @__PURE__ */ new Set();
       for (const [key, seconds] of totals.entries()) {
-        const [date, appId] = key.split(":");
+        const firstColonIndex = key.indexOf(":");
+        if (firstColonIndex === -1) continue;
+        const date = key.slice(0, firstColonIndex);
+        const appId = key.slice(firstColonIndex + 1);
+        if (!appId) continue;
         usedAppIds.add(appId);
         entries.push({
           date,
           appId,
-          minutes: Math.round(seconds / 60),
+          // Use floor to ensure we don't over-report, but keep fractional for accuracy
+          minutes: Math.max(0, Math.floor(seconds / 60)),
+          seconds: Math.max(0, Math.floor(seconds)),
+          // Include raw seconds for accurate display
           notifications: 0
         });
       }
@@ -522,11 +477,18 @@ var createUsageTracker = () => {
 };
 
 // electron/main.ts
-var { app: app2, BrowserWindow } = electron;
+var { app: app2, BrowserWindow, Tray, Menu, nativeImage } = electron;
 var { ipcMain } = electron;
 var isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 var usageTracker = createUsageTracker();
 var notificationTracker = createNotificationTracker();
+var mainWindow = null;
+var tray = null;
+var isQuitting = false;
+var settings = {
+  minimizeToTray: true,
+  startWithWindows: false
+};
 var generateSuggestions = () => {
   const snapshot = usageTracker.getSnapshot();
   const suggestions = [];
@@ -541,9 +503,9 @@ var generateSuggestions = () => {
   const categoryMinutes = /* @__PURE__ */ new Map();
   const appLookup = new Map(snapshot.apps.map((a) => [a.id, a]));
   for (const entry of snapshot.usageEntries) {
-    const app3 = appLookup.get(entry.appId);
-    if (app3) {
-      categoryMinutes.set(app3.category, (categoryMinutes.get(app3.category) ?? 0) + entry.minutes);
+    const appInfo = appLookup.get(entry.appId);
+    if (appInfo) {
+      categoryMinutes.set(appInfo.category, (categoryMinutes.get(appInfo.category) ?? 0) + entry.minutes);
     }
   }
   const totalMinutes = Array.from(categoryMinutes.values()).reduce((s, v) => s + v, 0);
@@ -585,15 +547,65 @@ var generateSuggestions = () => {
   });
   return suggestions;
 };
+var createTray = () => {
+  const iconSize = 16;
+  const icon = nativeImage.createEmpty();
+  const iconPath = isDev ? import_node_path.default.join(__dirname, "..", "public", "icon.png") : import_node_path.default.join(app2.getAppPath(), "dist", "icon.png");
+  let trayIcon;
+  try {
+    trayIcon = nativeImage.createFromPath(iconPath);
+    if (trayIcon.isEmpty()) {
+      throw new Error("Icon not found");
+    }
+  } catch {
+    const canvas = Buffer.alloc(16 * 16 * 4);
+    for (let i = 0; i < 16 * 16; i++) {
+      canvas[i * 4] = 79;
+      canvas[i * 4 + 1] = 139;
+      canvas[i * 4 + 2] = 255;
+      canvas[i * 4 + 3] = 255;
+    }
+    trayIcon = nativeImage.createFromBuffer(canvas, { width: 16, height: 16 });
+  }
+  tray = new Tray(trayIcon.resize({ width: 16, height: 16 }));
+  tray.setToolTip("ScreenForge - Screen Time Tracker");
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "Show ScreenForge",
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    { type: "separator" },
+    {
+      label: "Quit",
+      click: () => {
+        isQuitting = true;
+        app2.quit();
+      }
+    }
+  ]);
+  tray.setContextMenu(contextMenu);
+  tray.on("double-click", () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+};
 var createWindow = async () => {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1240,
     height: 820,
     minWidth: 980,
     minHeight: 640,
     backgroundColor: "#0b0d12",
     show: false,
-    titleBarStyle: "hiddenInset",
+    frame: true,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: import_node_path.default.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -601,8 +613,14 @@ var createWindow = async () => {
       sandbox: true
     }
   });
+  mainWindow.on("close", (event) => {
+    if (!isQuitting && settings.minimizeToTray) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
   mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
+    mainWindow?.show();
   });
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
@@ -612,6 +630,13 @@ var createWindow = async () => {
     await mainWindow.loadFile(indexPath);
   }
 };
+var setAutoLaunch = (enable) => {
+  if (process.platform !== "win32") return;
+  app2.setLoginItemSettings({
+    openAtLogin: enable,
+    path: app2.getPath("exe")
+  });
+};
 app2.whenReady().then(() => {
   ipcMain.handle("usage:snapshot", () => usageTracker.getSnapshot());
   ipcMain.handle("usage:clear", () => {
@@ -620,16 +645,41 @@ app2.whenReady().then(() => {
   });
   ipcMain.handle("suggestions:list", () => generateSuggestions());
   ipcMain.handle("notifications:summary", () => notificationTracker.getSummary());
+  ipcMain.handle("settings:get", () => settings);
+  ipcMain.handle("settings:set", (_event, newSettings) => {
+    if (typeof newSettings.minimizeToTray === "boolean") {
+      settings.minimizeToTray = newSettings.minimizeToTray;
+    }
+    if (typeof newSettings.startWithWindows === "boolean") {
+      settings.startWithWindows = newSettings.startWithWindows;
+      setAutoLaunch(newSettings.startWithWindows);
+    }
+    return settings;
+  });
+  createTray();
   createWindow();
   app2.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+    } else if (mainWindow) {
+      mainWindow.show();
     }
   });
 });
+app2.on("before-quit", () => {
+  isQuitting = true;
+});
 app2.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
+  if (process.platform === "darwin") {
+  } else if (!settings.minimizeToTray) {
     usageTracker.dispose();
     app2.quit();
+  }
+});
+app2.on("will-quit", () => {
+  usageTracker.dispose();
+  if (tray) {
+    tray.destroy();
+    tray = null;
   }
 });

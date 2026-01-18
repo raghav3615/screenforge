@@ -1,14 +1,30 @@
 import type { AppInfo, UsageEntry } from '../types/models'
 
 export const formatMinutes = (minutes: number) => {
+  if (minutes === 0) return '0m'
+  if (minutes < 1) return '<1m'
+  const hours = Math.floor(minutes / 60)
+  const mins = Math.round(minutes % 60)
+  if (hours === 0) return `${mins}m`
+  return `${hours}h ${mins}m`
+}
+
+// Format seconds with more granularity for real-time display
+export const formatSeconds = (totalSeconds: number) => {
+  if (totalSeconds < 60) return `${Math.floor(totalSeconds)}s`
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = Math.floor(totalSeconds % 60)
+  if (minutes < 60) return `${minutes}m ${seconds}s`
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
-  if (hours === 0) return `${mins}m`
   return `${hours}h ${mins}m`
 }
 
 export const getTotalMinutes = (entries: UsageEntry[]) =>
   entries.reduce((sum, entry) => sum + entry.minutes, 0)
+
+export const getTotalSeconds = (entries: UsageEntry[]) =>
+  entries.reduce((sum, entry) => sum + (entry.seconds ?? entry.minutes * 60), 0)
 
 export const getTotalNotifications = (entries: UsageEntry[]) =>
   entries.reduce((sum, entry) => sum + entry.notifications, 0)
@@ -52,17 +68,21 @@ export const getCategoryTotals = (entries: UsageEntry[], apps: AppInfo[]) => {
 }
 
 export const getAppTotals = (entries: UsageEntry[], apps: AppInfo[]) => {
-  const appMap = new Map<string, number>()
+  const appMap = new Map<string, { minutes: number; seconds: number }>()
   const appLookup = new Map(apps.map((app) => [app.id, app]))
 
   for (const entry of entries) {
-    appMap.set(entry.appId, (appMap.get(entry.appId) ?? 0) + entry.minutes)
+    const existing = appMap.get(entry.appId) ?? { minutes: 0, seconds: 0 }
+    appMap.set(entry.appId, {
+      minutes: existing.minutes + entry.minutes,
+      seconds: existing.seconds + (entry.seconds ?? entry.minutes * 60),
+    })
   }
 
   return Array.from(appMap.entries())
-    .map(([appId, minutes]) => ({ app: appLookup.get(appId), minutes }))
-    .filter((row): row is { app: AppInfo; minutes: number } => Boolean(row.app))
-    .sort((a, b) => b.minutes - a.minutes)
+    .map(([appId, { minutes, seconds }]) => ({ app: appLookup.get(appId), minutes, seconds }))
+    .filter((row): row is { app: AppInfo; minutes: number; seconds: number } => Boolean(row.app))
+    .sort((a, b) => b.seconds - a.seconds)
 }
 
 export const getNotificationTotals = (entries: UsageEntry[], apps: AppInfo[]) => {

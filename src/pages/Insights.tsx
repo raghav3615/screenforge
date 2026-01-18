@@ -21,15 +21,26 @@ interface InsightsProps {
 }
 
 const Insights = ({ snapshot }: InsightsProps) => {
-  const { dailyTotals, categoryTotals, appTotals, focusScore, peakHours, productivityRatio } = useMemo(() => {
+  const {
+    dailyTotals,
+    categoryTotals,
+    appTotals,
+    focusScore,
+    productivityRatio,
+    topAppName,
+    topCategoryName,
+    peakDayLabel,
+  } = useMemo(() => {
     if (!snapshot || snapshot.usageEntries.length === 0) {
       return {
         dailyTotals: [],
         categoryTotals: [],
         appTotals: [],
         focusScore: 0,
-        peakHours: 'Not enough data',
         productivityRatio: 0,
+        topAppName: 'N/A',
+        topCategoryName: 'N/A',
+        peakDayLabel: 'N/A',
       }
     }
 
@@ -45,17 +56,28 @@ const Insights = ({ snapshot }: InsightsProps) => {
       .reduce((s, c) => s + c.minutes, 0)
     
     const ratio = totalMinutes > 0 ? productiveMinutes / totalMinutes : 0
-    const score = Math.min(100, Math.round(ratio * 100 + (apps.length > 1 ? 10 : 0)))
+    const score = Math.min(100, Math.round(ratio * 100))
+
+    const topApp = apps.length > 0 ? apps[0] : null
+    const topCategory = categories.length > 0 ? categories[0] : null
+    const peakDay = totals.length > 0 ? totals.reduce((best, cur) => (cur.minutes > best.minutes ? cur : best), totals[0]) : null
 
     return {
       dailyTotals: totals,
       categoryTotals: categories,
       appTotals: apps,
       focusScore: score,
-      peakHours: '09:00 - 12:00',
       productivityRatio: Math.round(ratio * 100),
+      topAppName: topApp?.app.name ?? 'N/A',
+      topCategoryName: topCategory?.category ?? 'N/A',
+      peakDayLabel: peakDay ? new Date(peakDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A',
     }
   }, [snapshot])
+
+  const style = typeof window !== 'undefined' ? getComputedStyle(document.documentElement) : null
+  const axisColor = style?.getPropertyValue('--text-muted').trim() || 'rgba(255,255,255,0.6)'
+  const gridColor = style?.getPropertyValue('--card-border').trim() || 'rgba(255,255,255,0.08)'
+  const accentColor = style?.getPropertyValue('--accent').trim() || 'rgba(79, 139, 255, 0.9)'
 
   const weeklyData = useMemo(() => {
     const last7 = dailyTotals.slice(-7)
@@ -65,14 +87,14 @@ const Insights = ({ snapshot }: InsightsProps) => {
         {
           label: 'Minutes',
           data: last7.map((d) => d.minutes),
-          borderColor: 'rgba(79, 139, 255, 0.9)',
-          backgroundColor: 'rgba(79, 139, 255, 0.15)',
+          borderColor: accentColor,
+          backgroundColor: 'transparent',
           fill: true,
           tension: 0.4,
         },
       ],
     }
-  }, [dailyTotals])
+  }, [dailyTotals, accentColor])
 
   const categoryDonutData = useMemo(() => ({
     labels: categoryTotals.map((c) => c.category),
@@ -109,12 +131,12 @@ const Insights = ({ snapshot }: InsightsProps) => {
           <div className="insight-hero-card__sub">Time in productive apps</div>
         </div>
         <div className="insight-hero-card">
-          <div className="insight-hero-card__label">Peak Hours</div>
-          <div className="insight-hero-card__value insight-hero-card__value--small">{peakHours}</div>
-          <div className="insight-hero-card__sub">Most active period</div>
+          <div className="insight-hero-card__label">Top app</div>
+          <div className="insight-hero-card__value insight-hero-card__value--small">{topAppName}</div>
+          <div className="insight-hero-card__sub">Most used by minutes</div>
         </div>
         <div className="insight-hero-card">
-          <div className="insight-hero-card__label">Total Tracked</div>
+          <div className="insight-hero-card__label">Total tracked</div>
           <div className="insight-hero-card__value insight-hero-card__value--small">{formatMinutes(totalTime)}</div>
           <div className="insight-hero-card__sub">All time screen time</div>
         </div>
@@ -135,8 +157,8 @@ const Insights = ({ snapshot }: InsightsProps) => {
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { grid: { display: false } },
-                  y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                  x: { grid: { display: false }, ticks: { color: axisColor } },
+                  y: { grid: { color: gridColor }, ticks: { color: axisColor } },
                 },
               }}
             />
@@ -189,7 +211,11 @@ const Insights = ({ snapshot }: InsightsProps) => {
             </div>
             <div className="quick-stat">
               <span className="quick-stat__label">Top category</span>
-              <span className="quick-stat__value">{categoryTotals[0]?.category ?? 'N/A'}</span>
+              <span className="quick-stat__value">{topCategoryName}</span>
+            </div>
+            <div className="quick-stat">
+              <span className="quick-stat__label">Peak day</span>
+              <span className="quick-stat__value">{peakDayLabel}</span>
             </div>
           </div>
         </div>

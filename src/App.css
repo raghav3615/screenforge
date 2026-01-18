@@ -1,92 +1,140 @@
+/* ========================================
+   APP SHELL LAYOUT
+   ======================================== */
 .app-shell {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 240px 1fr;
   min-height: 100vh;
   background: var(--app-bg);
   color: var(--text-primary);
 }
 
+/* ========================================
+   SIDEBAR
+   ======================================== */
 .sidebar {
   background: var(--sidebar-bg);
   border-right: 1px solid var(--card-border);
-  padding: 28px 20px;
+  padding: 24px 16px;
+  padding-top: 40px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
+  -webkit-app-region: drag;
 }
 
 .sidebar__logo {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  padding: 0 12px;
+  color: var(--text-primary);
 }
 
 .sidebar__nav {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
+  -webkit-app-region: no-drag;
 }
 
 .nav-item {
   border: none;
   background: transparent;
   color: var(--text-muted);
-  padding: 10px 14px;
-  border-radius: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
   text-align: left;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
 }
 
-.nav-item--active,
 .nav-item:hover {
-  background: var(--panel-bg);
-  color: var(--text-primary);
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+}
+
+.nav-item--active {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+.nav-item--active:hover {
+  background: var(--accent-muted);
+  color: var(--accent);
 }
 
 .sidebar__footer {
   margin-top: auto;
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--panel-bg);
   border: 1px solid var(--card-border);
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .sidebar__note {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
 }
 
 .sidebar__score {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--accent), var(--success));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
+/* ========================================
+   MAIN CONTENT
+   ======================================== */
 .main {
-  padding: 28px 32px 40px;
+  padding: 24px 32px 40px;
+  padding-top: 40px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   overflow-y: auto;
   max-height: 100vh;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-border) transparent;
 }
 
 .main::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 8px;
+}
+
+.main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
+}
+
+.main::-webkit-scrollbar-thumb:hover {
+  background: var(--text-subtle);
 }
 
 .main__header-actions {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: -8px;
+  margin-bottom: -4px;
 }
 
+/* ========================================
+   TOPBAR
+   ======================================== */
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -95,27 +143,33 @@
 }
 
 .topbar__title {
-  font-size: 26px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 .topbar__subtitle {
   color: var(--text-muted);
   font-size: 14px;
+  margin-top: 2px;
 }
 
 .topbar__actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
+/* ========================================
+   THEME SWITCHER
+   ======================================== */
 .theme-switcher {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   background: var(--panel-bg);
-  padding: 6px;
-  border-radius: 999px;
+  padding: 4px;
+  border-radius: 10px;
   border: 1px solid var(--card-border);
 }
 
@@ -124,37 +178,79 @@
   background: transparent;
   color: var(--text-muted);
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 12px;
+  font-weight: 500;
   text-transform: capitalize;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.theme-pill:hover {
+  color: var(--text-primary);
+  background: var(--hover-bg);
 }
 
 .theme-pill--active {
   background: var(--accent);
-  color: #0c0f16;
+  color: #ffffff;
   font-weight: 600;
 }
 
+.theme-pill--active:hover {
+  background: var(--accent-hover);
+  color: #ffffff;
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
 .primary-button {
   background: var(--accent);
   border: none;
-  border-radius: 12px;
-  padding: 10px 18px;
+  border-radius: 8px;
+  padding: 10px 16px;
   font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  color: #0b0d12;
+  color: #ffffff;
+  transition: all 0.15s ease;
 }
 
+.primary-button:hover {
+  background: var(--accent-hover);
+}
+
+.ghost-button {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ghost-button:hover {
+  background: var(--hover-bg);
+  border-color: var(--text-subtle);
+  color: var(--text-primary);
+}
+
+/* ========================================
+   GRIDS
+   ======================================== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .grid {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -166,30 +262,40 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* ========================================
+   CARDS
+   ======================================== */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 18px;
+  border-radius: 12px;
   padding: 20px;
   box-shadow: var(--shadow-soft);
+  transition: border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--border-subtle);
 }
 
 .chart-card {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .card__header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
 .card__header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .card__header p {
@@ -198,23 +304,31 @@
   font-size: 13px;
 }
 
+/* ========================================
+   CHIPS
+   ======================================== */
 .chip {
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
   background: var(--panel-bg);
   border: 1px solid var(--card-border);
   color: var(--text-muted);
 }
 
+/* ========================================
+   INSIGHT CARDS
+   ======================================== */
 .insight-card {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .insight-card h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .insight-card p {
@@ -224,10 +338,19 @@
 }
 
 .insight-card__metric {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent);
 }
 
+.insight-card__metric--success {
+  color: var(--success);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
 @media (max-width: 1200px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -237,6 +360,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    padding: 16px 20px;
   }
 
   .sidebar__nav {

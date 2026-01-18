@@ -1,7 +1,7 @@
 .suggestion-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 18px;
+  border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -11,7 +11,9 @@
 
 .suggestion-card h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .suggestion-card p {
@@ -22,22 +24,31 @@
 
 .suggestion-card__list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .suggestion-card__item {
-  padding: 14px;
-  border-radius: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
   background: var(--panel-bg);
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s ease;
+}
+
+.suggestion-card__item:hover {
+  border-color: var(--card-border);
+  background: var(--hover-bg);
 }
 
 .suggestion-card__title {
   font-weight: 600;
-  margin-bottom: 6px;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .suggestion-card__detail {
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.4;
 }

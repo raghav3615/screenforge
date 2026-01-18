@@ -13,6 +13,7 @@ export interface UsageEntry {
   date: string
   appId: string
   minutes: number
+  seconds?: number  // Total seconds for more accurate display
   notifications: number
 }
 

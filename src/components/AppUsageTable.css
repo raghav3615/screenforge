@@ -1,7 +1,7 @@
 .table-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 18px;
+  border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -18,7 +18,9 @@
 
 .table-card__header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .table-card__header p {
@@ -30,7 +32,6 @@
 .table {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .table__row {
@@ -38,20 +39,32 @@
   grid-template-columns: 1.4fr 1fr 1fr 1fr;
   gap: 12px;
   align-items: center;
-  font-size: 14px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--card-border);
+  font-size: 13px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.1s ease;
 }
 
 .table__row:last-child {
   border-bottom: none;
 }
 
+.table__row:not(.table__row--head):hover {
+  background: var(--hover-bg);
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 6px;
+}
+
 .table__row--head {
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  border-bottom-color: var(--card-border);
+  padding-bottom: 10px;
 }
 
 .table__app {
@@ -59,25 +72,12 @@
   align-items: center;
   gap: 10px;
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .table__dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-}
-
-.ghost-button {
-  background: transparent;
-  border: 1px solid var(--card-border);
-  color: var(--text-primary);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.ghost-button:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  flex-shrink: 0;
 }

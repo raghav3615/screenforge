@@ -1,72 +1,97 @@
 .insights-hero {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 
 .insight-hero-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 18px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   box-shadow: var(--shadow-soft);
+  transition: all 0.15s ease;
+}
+
+.insight-hero-card:hover {
+  border-color: var(--text-subtle);
+  box-shadow: var(--shadow-medium);
 }
 
 .insight-hero-card__label {
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
 }
 
 .insight-hero-card__value {
-  font-size: 36px;
-  font-weight: 600;
-  color: var(--accent);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 .insight-hero-card__value--small {
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .insight-hero-card__sub {
-  font-size: 13px;
-  color: var(--text-muted);
+  font-size: 12px;
+  color: var(--text-subtle);
 }
 
 .donut-container {
-  max-width: 320px;
+  max-width: 300px;
   margin: 0 auto;
 }
 
 .insights-stats {
-  margin-top: 8px;
+  margin-top: 4px;
+}
+
+.insights-stats .card h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .quick-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
   margin-top: 16px;
 }
 
 .quick-stat {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  padding: 12px;
+  background: var(--panel-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
 }
 
 .quick-stat__label {
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
 }
 
 .quick-stat__value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .chart-empty {
@@ -76,6 +101,9 @@
   min-height: 200px;
   color: var(--text-muted);
   font-size: 14px;
+  border: 1px dashed var(--card-border);
+  border-radius: 8px;
+  background: var(--panel-bg);
 }
 
 @media (max-width: 1200px) {
@@ -84,6 +112,6 @@
   }
 
   .quick-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 }

@@ -1,10 +1,11 @@
 import type { AppInfo } from '../types/models'
-import { formatMinutes } from '../utils/analytics'
+import { formatMinutes, formatSeconds } from '../utils/analytics'
 import './AppUsageTable.css'
 
 interface AppUsageRow {
   app: AppInfo
   minutes: number
+  seconds?: number
   notifications: number
 }
 
@@ -36,7 +37,7 @@ const AppUsageTable = ({ rows }: AppUsageTableProps) => {
               {row.app.name}
             </span>
             <span>{row.app.category}</span>
-            <span>{formatMinutes(row.minutes)}</span>
+            <span>{row.seconds !== undefined ? formatSeconds(row.seconds) : formatMinutes(row.minutes)}</span>
             <span>{row.notifications}</span>
           </div>
         ))}

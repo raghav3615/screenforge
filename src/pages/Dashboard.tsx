@@ -91,6 +91,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
         appRows: appTotals.map((row) => ({
           app: row.app,
           minutes: Math.round(row.minutes / Math.max(totals.length, 1)),
+          seconds: Math.round(row.seconds / Math.max(totals.length, 1)),
           notifications: notificationMap.get(row.app.id) ?? 0,
         })),
         notificationRows: summaryRows,
@@ -100,6 +101,19 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
   const activeAppName = snapshot?.activeAppId
     ? snapshot.apps.find((app) => app.id === snapshot.activeAppId)?.name ?? 'Other apps'
     : 'No active app'
+
+  // Get currently running apps with windows (active apps)
+  const activeApps = useMemo(() => {
+    const items = snapshot?.runningApps ?? []
+    const appLookup = new Map(snapshot?.apps.map((a) => [a.id, a]) ?? [])
+    return items
+      .filter((p) => p.hasWindow) // Only show apps with visible windows
+      .map((p) => ({
+        ...p,
+        appInfo: appLookup.get(p.appId),
+      }))
+      .slice(0, 8) // Show top 8 active apps
+  }, [snapshot])
 
   const chartLabels = dailyTotals.map((entry) =>
     new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -223,17 +237,35 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
 
         <section className="grid grid--three">
         <SuggestionPanel items={suggestions} />
-        <div className="card insight-card">
-            <h3>Active app</h3>
-            <p>{activeAppName}</p>
-            <div className="insight-card__metric">Live</div>
-            <p>Currently on screen</p>
+        <div className="card active-apps-card">
+            <h3>Active apps</h3>
+            <p className="active-apps-subtitle">Currently open windows</p>
+            {activeApps.length === 0 ? (
+              <div className="active-apps-empty">No apps with visible windows detected</div>
+            ) : (
+              <div className="active-apps-list">
+                {activeApps.map((app) => (
+                  <div key={app.appId} className="active-app-item">
+                    <span
+                      className="active-app-dot"
+                      style={{ background: app.appInfo?.color ?? '#6b7280' }}
+                    />
+                    <span className="active-app-name">
+                      {app.appInfo?.name ?? app.process}
+                    </span>
+                    {app.appId === snapshot?.activeAppId && (
+                      <span className="active-app-focus">focused</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
         </div>
         <div className="card insight-card">
           <h3>Session status</h3>
           <p>ScreenForge is tracking your usage</p>
           <div className="insight-card__metric insight-card__metric--success">Active</div>
-          <p>Real-time data collection enabled</p>
+          <p>Focused on: {activeAppName}</p>
         </div>
       </section>
     </>

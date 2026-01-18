@@ -5,8 +5,88 @@
   min-height: 200px;
   color: var(--text-muted);
   font-size: 14px;
+  border: 1px dashed var(--card-border);
+  border-radius: 8px;
+  background: var(--panel-bg);
 }
 
 .insight-card__metric--success {
-  color: #2ed47a;
+  color: var(--success);
+}
+
+/* Active apps card styles */
+.active-apps-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.active-apps-card h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.active-apps-subtitle {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 0 0 8px 0;
+}
+
+.active-apps-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.active-apps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.active-app-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s ease;
+}
+
+.active-app-item:hover {
+  border-color: var(--card-border);
+  background: var(--hover-bg);
+}
+
+.active-app-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.active-app-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-app-focus {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(79, 139, 255, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }

@@ -17,6 +17,7 @@ export interface UsageEntry {
   date: string
   appId: string
   minutes: number
+  seconds?: number  // Total seconds for more accurate display
   notifications: number
 }
 
@@ -184,65 +185,31 @@ const savePersistedData = (totals: Map<string, number>) => {
 }
 
 const getActiveApp = async (): Promise<ActiveAppSample | null> => {
+  // Simpler, more reliable PowerShell script for getting foreground window
   const script = `
 Add-Type @'
 using System;
 using System.Runtime.InteropServices;
-public class Win32 {
+using System.Text;
+public class ForegroundWindow {
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-  [DllImport("user32.dll", SetLastError=true)] public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int count);
-  [DllImport("user32.dll", SetLastError=true)] public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
-  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
-  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
-  [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
-  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-  
-  [StructLayout(LayoutKind.Sequential)]
-  public struct RECT {
-    public int Left, Top, Right, Bottom;
-  }
-  
-  public const int GWL_STYLE = -16;
-  public const int WS_MINIMIZE = 0x20000000;
+  [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+  [DllImport("user32.dll", SetLastError=true)] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 }
 '@
-$hWnd=[Win32]::GetForegroundWindow()
+$hWnd = [ForegroundWindow]::GetForegroundWindow()
 if ($hWnd -eq [IntPtr]::Zero) {
-  [PSCustomObject]@{ process=$null; title=$null; isMinimized=$true; isVisible=$false } | ConvertTo-Json -Compress
-  return
+  Write-Output '{"process":null,"title":null,"isMinimized":false,"isVisible":true}'
+  exit
 }
-$pid=0
-[Win32]::GetWindowThreadProcessId($hWnd,[ref]$pid) | Out-Null
-$proc=Get-Process -Id $pid -ErrorAction SilentlyContinue
-$sb=New-Object System.Text.StringBuilder 1024
-[Win32]::GetWindowText($hWnd,$sb,$sb.Capacity) | Out-Null
-$title=$sb.ToString()
-
-# Check if window is minimized using IsIconic or window style
-$isIconic=[Win32]::IsIconic($hWnd)
-$style=[Win32]::GetWindowLong($hWnd, [Win32]::GWL_STYLE)
-$isMinByStyle=($style -band [Win32]::WS_MINIMIZE) -ne 0
-$isMinimized=$isIconic -or $isMinByStyle
-
-# Check if window is visible
-$isVisible=[Win32]::IsWindowVisible($hWnd)
-
-# Also check window rect - if width or height is 0, it's not really visible
-$rect=New-Object Win32+RECT
-$gotRect=[Win32]::GetWindowRect($hWnd, [ref]$rect)
-$hasSize=$false
-if ($gotRect) {
-  $width=$rect.Right - $rect.Left
-  $height=$rect.Bottom - $rect.Top
-  $hasSize=($width -gt 0) -and ($height -gt 0)
-}
-
-[PSCustomObject]@{ 
-  process=$proc.ProcessName
-  title=$title
-  isMinimized=$isMinimized
-  isVisible=($isVisible -and $hasSize -and (-not $isMinimized))
-} | ConvertTo-Json -Compress
+$procId = 0
+[ForegroundWindow]::GetWindowThreadProcessId($hWnd, [ref]$procId) | Out-Null
+$proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
+$sb = New-Object System.Text.StringBuilder 512
+[ForegroundWindow]::GetWindowText($hWnd, $sb, $sb.Capacity) | Out-Null
+$title = $sb.ToString()
+$name = if ($proc) { $proc.ProcessName } else { $null }
+@{ process=$name; title=$title; isMinimized=$false; isVisible=$true } | ConvertTo-Json -Compress
 `
 
   try {
@@ -260,7 +227,7 @@ if ($gotRect) {
       ],
       {
         windowsHide: true,
-        timeout: 2000,
+        timeout: 3000,
         maxBuffer: 1024 * 1024,
       }
     )
@@ -282,19 +249,31 @@ const getRunningApps = async (): Promise<Array<{ process: string; count: number;
 $ignored = @(
   'Idle','System','Registry','smss','csrss','wininit','services','lsass','svchost','fontdrvhost',
   'dwm','winlogon','conhost','dllhost','taskhostw','spoolsv','RuntimeBroker','SearchIndexer',
-  'SecurityHealthService','WmiPrvSE','sihost','audiodg'
+  'SecurityHealthService','WmiPrvSE','sihost','audiodg','ctfmon','SearchHost','StartMenuExperienceHost',
+  'ShellExperienceHost','TextInputHost','LockApp','ApplicationFrameHost','SystemSettings',
+  'WidgetService','Widgets','PhoneExperienceHost','UserOOBEBroker','CredentialUIBroker'
 )
 
 $procs = Get-Process -ErrorAction SilentlyContinue |
   Where-Object { $_.ProcessName -and ($ignored -notcontains $_.ProcessName) } |
-  Select-Object ProcessName, MainWindowTitle
+  Select-Object ProcessName, MainWindowHandle, MainWindowTitle
 
 $groups = $procs | Group-Object ProcessName | ForEach-Object {
-  $hasWindow = ($_.Group | Where-Object { $_.MainWindowTitle -and $_.MainWindowTitle.Trim().Length -gt 0 } | Measure-Object).Count -gt 0
+  $hasWindow = ($_.Group | Where-Object { 
+    $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -and $_.MainWindowTitle.Trim().Length -gt 0 
+  } | Measure-Object).Count -gt 0
   [PSCustomObject]@{ process=$_.Name; count=$_.Count; hasWindow=$hasWindow }
 }
 
-$groups | Sort-Object count -Descending | Select-Object -First 80 | ConvertTo-Json -Compress
+$sorted = $groups | Sort-Object @{Expression={$_.hasWindow}; Descending=$true}, @{Expression={$_.count}; Descending=$true}
+$result = $sorted | Select-Object -First 80
+if ($result -eq $null) {
+  Write-Output '[]'
+} elseif ($result -is [array]) {
+  $result | ConvertTo-Json -Compress
+} else {
+  ConvertTo-Json @($result) -Compress
+}
 `
 
   try {
@@ -366,12 +345,6 @@ export const createUsageTracker = (): UsageTracker => {
   const resolveAppId = (active: ActiveAppSample | null): string | null => {
     if (!active?.process) return null
     
-    // CRITICAL: Don't track minimized or invisible windows
-    // Only track windows that are actually visible on screen
-    if (active.isMinimized || !active.isVisible) {
-      return null
-    }
-    
     // Skip tracking the ScreenForge app itself or Electron
     const processLower = active.process.toLowerCase()
     if (processLower === 'electron' || processLower === 'screenforge' || 
@@ -424,32 +397,35 @@ export const createUsageTracker = (): UsageTracker => {
         const appId = resolveAppIdForRunningApps(p.process)
         return { process: p.process, appId, count: p.count, hasWindow: p.hasWindow }
       })
+      .filter((p): p is RunningAppSummary => p.appId !== null)
   }
 
   const poll = async () => {
     const now = Date.now()
     const elapsedSeconds = Math.max(0, (now - lastTimestamp) / 1000)
-    
-    // Only record time if there was a valid visible app
-    if (lastAppId) {
-      record(lastAppId, elapsedSeconds)
-    }
     lastTimestamp = now
 
+    // Record time for the previous app
+    // Cap at 60 seconds to avoid huge jumps if the app was suspended
+    if (lastAppId && elapsedSeconds > 0) {
+      const cappedSeconds = Math.min(elapsedSeconds, 60)
+      record(lastAppId, cappedSeconds)
+    }
+
     const active = await getActiveApp()
-    
-    // resolveAppId now returns null for minimized/invisible windows
     activeAppId = resolveAppId(active)
     lastAppId = activeAppId
   }
 
+  // Start polling
   interval = setInterval(poll, tickMs)
+  // Initialize immediately
   poll()
 
-  // Refresh running apps periodically (less frequent than active window sampling)
+  // Refresh running apps periodically (every 5 seconds for better responsiveness)
   const runningAppsInterval = setInterval(() => {
     refreshRunningApps()
-  }, 15000)
+  }, 5000)
   refreshRunningApps()
 
   // Save data every 30 seconds
@@ -464,12 +440,19 @@ export const createUsageTracker = (): UsageTracker => {
       const usedAppIds = new Set<string>()
       
       for (const [key, seconds] of totals.entries()) {
-        const [date, appId] = key.split(':')
+        // Key format is "YYYY-MM-DD:appId" where appId can contain colons (e.g., "proc:chrome")
+        const firstColonIndex = key.indexOf(':')
+        if (firstColonIndex === -1) continue
+        const date = key.slice(0, firstColonIndex)
+        const appId = key.slice(firstColonIndex + 1)
+        if (!appId) continue
         usedAppIds.add(appId)
         entries.push({
           date,
           appId,
-          minutes: Math.round(seconds / 60),
+          // Use floor to ensure we don't over-report, but keep fractional for accuracy
+          minutes: Math.max(0, Math.floor(seconds / 60)),
+          seconds: Math.max(0, Math.floor(seconds)),  // Include raw seconds for accurate display
           notifications: 0,
         })
       }

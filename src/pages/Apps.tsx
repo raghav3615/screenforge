@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { UsageSnapshot } from '../services/usageService'
 import type { AppInfo } from '../types/models'
-import { formatMinutes, getAppTotals, getDailyTotals } from '../utils/analytics'
+import { formatSeconds, getAppTotals, getDailyTotals } from '../utils/analytics'
 import './Apps.css'
 
 interface AppsProps {
@@ -16,19 +16,29 @@ const Apps = ({ snapshot }: AppsProps) => {
 
   const runningNow = useMemo(() => {
     const items = snapshot?.runningApps ?? []
+    const appLookup = new Map(snapshot?.apps.map((a) => [a.id, a]) ?? [])
     return [...items]
+      .map((p) => ({
+        ...p,
+        appInfo: appLookup.get(p.appId),
+      }))
+      // Prioritize apps with windows, then by count
       .sort((a, b) => (b.hasWindow ? 1 : 0) - (a.hasWindow ? 1 : 0) || b.count - a.count)
-      .slice(0, 24)
+      .slice(0, 30)
   }, [snapshot])
 
-  const { appList, totalMinutes, dailyCount } = useMemo(() => {
+  // Separate open apps (with visible windows) from background processes
+  const openApps = useMemo(() => runningNow.filter((p) => p.hasWindow), [runningNow])
+  const backgroundApps = useMemo(() => runningNow.filter((p) => !p.hasWindow), [runningNow])
+
+  const { appList, totalSeconds, dailyCount } = useMemo(() => {
     if (!snapshot || snapshot.usageEntries.length === 0) {
-      return { appList: [], totalMinutes: 0, dailyCount: 0 }
+      return { appList: [], totalSeconds: 0, dailyCount: 0 }
     }
 
     const appTotals = getAppTotals(snapshot.usageEntries, snapshot.apps)
     const dailyTotals = getDailyTotals(snapshot.usageEntries)
-    const total = appTotals.reduce((s, a) => s + a.minutes, 0)
+    const totalSec = appTotals.reduce((s, a) => s + a.seconds, 0)
 
     let sorted = [...appTotals]
     if (sortBy === 'name') {
@@ -46,7 +56,7 @@ const Apps = ({ snapshot }: AppsProps) => {
 
     return {
       appList: sorted,
-      totalMinutes: total,
+      totalSeconds: totalSec,
       dailyCount: dailyTotals.length,
     }
   }, [snapshot, sortBy, search])
@@ -62,20 +72,50 @@ const Apps = ({ snapshot }: AppsProps) => {
 
       <section className="running-now">
         <div className="running-now__header">
-          <div className="running-now__title">Running now</div>
+          <div className="running-now__title">Open apps</div>
           <div className="running-now__sub">
-            Foreground + background processes (Windows)
+            Apps with visible windows
           </div>
         </div>
-        {runningNow.length === 0 ? (
-          <div className="running-now__empty">No running apps detected yet.</div>
+        {openApps.length === 0 ? (
+          <div className="running-now__empty">No apps with visible windows detected yet.</div>
         ) : (
           <div className="running-now__list">
-            {runningNow.map((p) => (
+            {openApps.map((p) => (
+              <div 
+                key={`${p.process}:${p.count}:${p.hasWindow}`} 
+                className={`running-now__pill running-now__pill--window ${p.appId === snapshot?.activeAppId ? 'running-now__pill--active' : ''}`}
+              >
+                <span 
+                  className="running-now__dot" 
+                  style={{ background: p.appInfo?.color ?? '#6b7280' }} 
+                />
+                <span className="running-now__name">{p.appInfo?.name ?? p.process}</span>
+                {p.appId === snapshot?.activeAppId && (
+                  <span className="running-now__focus">focused</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="running-now running-now--background">
+        <div className="running-now__header">
+          <div className="running-now__title">Background processes</div>
+          <div className="running-now__sub">
+            Running without visible windows
+          </div>
+        </div>
+        {backgroundApps.length === 0 ? (
+          <div className="running-now__empty">No background processes detected.</div>
+        ) : (
+          <div className="running-now__list">
+            {backgroundApps.slice(0, 16).map((p) => (
               <div key={`${p.process}:${p.count}:${p.hasWindow}`} className="running-now__pill">
-                <span className="running-now__name">{p.process}</span>
+                <span className="running-now__name">{p.appInfo?.name ?? p.process}</span>
                 <span className="running-now__meta">
-                  {p.hasWindow ? 'window' : 'bg'} · {p.count}
+                  {p.count} {p.count === 1 ? 'process' : 'processes'}
                 </span>
               </div>
             ))}
@@ -111,13 +151,13 @@ const Apps = ({ snapshot }: AppsProps) => {
             {search ? 'No apps match your search' : 'No apps tracked yet. Start using your computer!'}
           </div>
         ) : (
-          appList.map(({ app, minutes }) => (
+          appList.map(({ app, seconds }) => (
             <AppCard
               key={app.id}
               app={app}
-              totalMinutes={minutes}
-              dailyAverage={Math.round(minutes / Math.max(dailyCount, 1))}
-              percentage={totalMinutes > 0 ? Math.round((minutes / totalMinutes) * 100) : 0}
+              totalSeconds={seconds}
+              dailyAverageSeconds={Math.round(seconds / Math.max(dailyCount, 1))}
+              percentage={totalSeconds > 0 ? Math.round((seconds / totalSeconds) * 100) : 0}
             />
           ))
         )}
@@ -128,12 +168,12 @@ const Apps = ({ snapshot }: AppsProps) => {
 
 interface AppCardProps {
   app: AppInfo
-  totalMinutes: number
-  dailyAverage: number
+  totalSeconds: number
+  dailyAverageSeconds: number
   percentage: number
 }
 
-const AppCard = ({ app, totalMinutes, dailyAverage, percentage }: AppCardProps) => (
+const AppCard = ({ app, totalSeconds, dailyAverageSeconds, percentage }: AppCardProps) => (
   <div className="app-card">
     <div className="app-card__header">
       <div className="app-card__dot" style={{ background: app.color }} />
@@ -145,11 +185,11 @@ const AppCard = ({ app, totalMinutes, dailyAverage, percentage }: AppCardProps) 
     <div className="app-card__stats">
       <div className="app-card__stat">
         <span className="app-card__stat-label">Total</span>
-        <span className="app-card__stat-value">{formatMinutes(totalMinutes)}</span>
+        <span className="app-card__stat-value">{formatSeconds(totalSeconds)}</span>
       </div>
       <div className="app-card__stat">
         <span className="app-card__stat-label">Daily avg</span>
-        <span className="app-card__stat-value">{formatMinutes(dailyAverage)}</span>
+        <span className="app-card__stat-value">{formatSeconds(dailyAverageSeconds)}</span>
       </div>
       <div className="app-card__stat">
         <span className="app-card__stat-label">Share</span>
