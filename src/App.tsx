@@ -7,6 +7,7 @@ import {
   fetchSuggestions,
   fetchUsageSnapshot,
 } from './services/usageService'
+import { calculateFocusScore } from './utils/analytics'
 import Dashboard from './pages/Dashboard'
 import Insights from './pages/Insights'
 import Apps from './pages/Apps'
@@ -64,23 +65,10 @@ const App = () => {
     }
   }, [])
 
-  // Calculate focus score based on productive vs non-productive time
-  const focusScore = (() => {
-    if (!snapshot || snapshot.usageEntries.length === 0) return 0
-    const productiveCategories = ['Productivity', 'Education', 'Communication', 'Utilities', 'Browsers']
-    const appLookup = new Map(snapshot.apps.map((a) => [a.id, a]))
-    let productiveMinutes = 0
-    let totalMinutes = 0
-    for (const entry of snapshot.usageEntries) {
-      const app = appLookup.get(entry.appId)
-      totalMinutes += entry.minutes
-      if (app && productiveCategories.includes(app.category)) {
-        productiveMinutes += entry.minutes
-      }
-    }
-    if (totalMinutes === 0) return 0
-    return Math.min(100, Math.round((productiveMinutes / totalMinutes) * 100 + 10))
-  })()
+  // Calculate focus score using shared utility
+  const focusScore = snapshot 
+    ? calculateFocusScore(snapshot.usageEntries, snapshot.apps) 
+    : 0
 
   const renderPage = () => {
     switch (page) {

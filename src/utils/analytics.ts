@@ -98,3 +98,29 @@ export const getNotificationTotals = (entries: UsageEntry[], apps: AppInfo[]) =>
     .filter((row): row is { app: AppInfo; notifications: number } => Boolean(row.app))
     .sort((a, b) => b.notifications - a.notifications)
 }
+
+// Productive categories for focus score calculation
+const PRODUCTIVE_CATEGORIES = ['Productivity', 'Education', 'Communication', 'Utilities', 'Browsers']
+
+// Calculate focus score based on productive vs non-productive time
+// Returns a score from 0-100
+export const calculateFocusScore = (entries: UsageEntry[], apps: AppInfo[]): number => {
+  if (entries.length === 0) return 0
+  
+  const appLookup = new Map(apps.map((a) => [a.id, a]))
+  let productiveMinutes = 0
+  let totalMinutes = 0
+  
+  for (const entry of entries) {
+    const app = appLookup.get(entry.appId)
+    totalMinutes += entry.minutes
+    if (app && PRODUCTIVE_CATEGORIES.includes(app.category)) {
+      productiveMinutes += entry.minutes
+    }
+  }
+  
+  if (totalMinutes === 0) return 0
+  
+  const ratio = productiveMinutes / totalMinutes
+  return Math.min(100, Math.round(ratio * 100))
+}

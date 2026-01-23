@@ -12,7 +12,7 @@ import {
 import { Doughnut, Line } from 'react-chartjs-2'
 import type { UsageSnapshot } from '../services/usageService'
 import type { ThemeName } from '../types/models'
-import { formatMinutes, getDailyTotals, getCategoryTotals, getAppTotals } from '../utils/analytics'
+import { formatMinutes, getDailyTotals, getCategoryTotals, getAppTotals, calculateFocusScore } from '../utils/analytics'
 import './Insights.css'
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
@@ -50,15 +50,8 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
     const categories = getCategoryTotals(snapshot.usageEntries, snapshot.apps)
     const apps = getAppTotals(snapshot.usageEntries, snapshot.apps)
 
-    // Calculate focus score based on app distribution
-    const totalMinutes = categories.reduce((s, c) => s + c.minutes, 0)
-    const productiveCategories = ['Productivity', 'Education', 'Communication', 'Utilities', 'Browsers']
-    const productiveMinutes = categories
-      .filter((c) => productiveCategories.includes(c.category))
-      .reduce((s, c) => s + c.minutes, 0)
-    
-    const ratio = totalMinutes > 0 ? productiveMinutes / totalMinutes : 0
-    const score = Math.min(100, Math.round(ratio * 100))
+    // Calculate focus score using shared utility
+    const score = calculateFocusScore(snapshot.usageEntries, snapshot.apps)
 
     const topApp = apps.length > 0 ? apps[0] : null
     const topCategory = categories.length > 0 ? categories[0] : null
@@ -69,7 +62,7 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
       categoryTotals: categories,
       appTotals: apps,
       focusScore: score,
-      productivityRatio: Math.round(ratio * 100),
+      productivityRatio: score,
       topAppName: topApp?.app.name ?? 'N/A',
       topCategoryName: topCategory?.category ?? 'N/A',
       peakDayLabel: peakDay ? new Date(peakDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A',
