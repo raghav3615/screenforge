@@ -24,11 +24,32 @@
 }
 
 .sidebar__logo {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 0 12px;
+}
+
+.logo-icon {
   color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.logo-text {
+  display: flex;
+  align-items: baseline;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.logo-text__screen {
+  color: var(--text-primary);
+}
+
+.logo-text__forge {
+  color: var(--accent);
+  font-weight: 800;
 }
 
 .sidebar__nav {

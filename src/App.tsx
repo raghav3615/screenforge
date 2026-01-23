@@ -67,7 +67,7 @@ const App = () => {
   // Calculate focus score based on productive vs non-productive time
   const focusScore = (() => {
     if (!snapshot || snapshot.usageEntries.length === 0) return 0
-    const productiveCategories = ['Productivity', 'Education', 'Communication', 'Utilities']
+    const productiveCategories = ['Productivity', 'Education', 'Communication', 'Utilities', 'Browsers']
     const appLookup = new Map(snapshot.apps.map((a) => [a.id, a]))
     let productiveMinutes = 0
     let totalMinutes = 0
@@ -94,7 +94,7 @@ const App = () => {
           />
         )
       case 'insights':
-        return <Insights snapshot={snapshot} />
+        return <Insights snapshot={snapshot} theme={theme} />
       case 'apps':
         return <Apps snapshot={snapshot} />
       case 'notifications':
@@ -109,7 +109,19 @@ const App = () => {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="sidebar__logo">ScreenForge</div>
+        <div className="sidebar__logo">
+          <svg className="logo-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
+            <path d="M8 21h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M12 17v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M7 8l3 3-3 3" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 14h5" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <span className="logo-text">
+            <span className="logo-text__screen">Screen</span>
+            <span className="logo-text__forge">Forge</span>
+          </span>
+        </div>
         <nav className="sidebar__nav">
           {navItems.map((item) => (
             <button

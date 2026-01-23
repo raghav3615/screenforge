@@ -261,11 +261,28 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
               </div>
             )}
         </div>
-        <div className="card insight-card">
-          <h3>Session status</h3>
-          <p>ScreenForge is tracking your usage</p>
-          <div className="insight-card__metric insight-card__metric--success">Active</div>
-          <p>Focused on: {activeAppName}</p>
+        <div className="card session-card">
+          <div className="session-card__header">
+            <div className="session-card__status">
+              <span className="session-card__dot"></span>
+              <span className="session-card__status-text">Tracking</span>
+            </div>
+            <span className="chip">Live</span>
+          </div>
+          <div className="session-card__info">
+            <div className="session-card__row">
+              <span className="session-card__label">Current focus</span>
+              <span className="session-card__value">{activeAppName}</span>
+            </div>
+            <div className="session-card__row">
+              <span className="session-card__label">Apps tracked</span>
+              <span className="session-card__value">{snapshot?.apps.length ?? 0}</span>
+            </div>
+            <div className="session-card__row">
+              <span className="session-card__label">Days recorded</span>
+              <span className="session-card__value">{dailyTotals.length}</span>
+            </div>
+          </div>
         </div>
       </section>
     </>

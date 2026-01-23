@@ -11,6 +11,7 @@ import {
 } from 'chart.js'
 import { Doughnut, Line } from 'react-chartjs-2'
 import type { UsageSnapshot } from '../services/usageService'
+import type { ThemeName } from '../types/models'
 import { formatMinutes, getDailyTotals, getCategoryTotals, getAppTotals } from '../utils/analytics'
 import './Insights.css'
 
@@ -18,9 +19,10 @@ ChartJS.register(ArcElement, CategoryScale, LinearScale, PointElement, LineEleme
 
 interface InsightsProps {
   snapshot: UsageSnapshot | null
+  theme: ThemeName
 }
 
-const Insights = ({ snapshot }: InsightsProps) => {
+const Insights = ({ snapshot, theme }: InsightsProps) => {
   const {
     dailyTotals,
     categoryTotals,
@@ -50,7 +52,7 @@ const Insights = ({ snapshot }: InsightsProps) => {
 
     // Calculate focus score based on app distribution
     const totalMinutes = categories.reduce((s, c) => s + c.minutes, 0)
-    const productiveCategories = ['Productivity', 'Education', 'Communication', 'Utilities']
+    const productiveCategories = ['Productivity', 'Education', 'Communication', 'Utilities', 'Browsers']
     const productiveMinutes = categories
       .filter((c) => productiveCategories.includes(c.category))
       .reduce((s, c) => s + c.minutes, 0)
@@ -78,6 +80,9 @@ const Insights = ({ snapshot }: InsightsProps) => {
   const axisColor = style?.getPropertyValue('--text-muted').trim() || 'rgba(255,255,255,0.6)'
   const gridColor = style?.getPropertyValue('--card-border').trim() || 'rgba(255,255,255,0.08)'
   const accentColor = style?.getPropertyValue('--accent').trim() || 'rgba(79, 139, 255, 0.9)'
+  
+  // Use white text for dark themes, black for light themes
+  const legendColor = theme === 'dark' || theme === 'tokyo' ? '#ffffff' : '#000000'
 
   const weeklyData = useMemo(() => {
     const last7 = dailyTotals.slice(-7)
@@ -182,7 +187,7 @@ const Insights = ({ snapshot }: InsightsProps) => {
                   responsive: true,
                   cutout: '65%',
                   plugins: {
-                    legend: { position: 'right', labels: { color: 'var(--text-primary)' } },
+                    legend: { position: 'right', labels: { color: legendColor } },
                   },
                 }}
               />

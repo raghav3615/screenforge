@@ -106,9 +106,15 @@ var path = __toESM(require("node:path"), 1);
 var execFileAsync2 = (0, import_node_util2.promisify)(import_node_child_process2.execFile);
 var appCatalog = [
   { id: "code", name: "VS Code", category: "Productivity", color: "#35a7ff" },
-  { id: "msedge", name: "Microsoft Edge", category: "Productivity", color: "#4f8bff" },
-  { id: "chrome", name: "Google Chrome", category: "Productivity", color: "#f7b955" },
-  { id: "firefox", name: "Firefox", category: "Productivity", color: "#ff6611" },
+  // Browsers
+  { id: "msedge", name: "Microsoft Edge", category: "Browsers", color: "#4f8bff" },
+  { id: "chrome", name: "Google Chrome", category: "Browsers", color: "#f7b955" },
+  { id: "firefox", name: "Firefox", category: "Browsers", color: "#ff6611" },
+  { id: "zen", name: "Zen Browser", category: "Browsers", color: "#8b5cf6" },
+  { id: "brave", name: "Brave", category: "Browsers", color: "#fb542b" },
+  { id: "opera", name: "Opera", category: "Browsers", color: "#ff1b2d" },
+  { id: "vivaldi", name: "Vivaldi", category: "Browsers", color: "#ef3939" },
+  { id: "arc", name: "Arc", category: "Browsers", color: "#5e5ce6" },
   { id: "discord", name: "Discord", category: "Social", color: "#8c7dff" },
   { id: "spotify", name: "Spotify", category: "Entertainment", color: "#2ed47a" },
   { id: "steam", name: "Steam", category: "Entertainment", color: "#ff8b6a" },
@@ -145,9 +151,15 @@ var processPatterns = [
   { pattern: /^code$/i, appId: "code" },
   { pattern: /^code - insiders$/i, appId: "vscode-insiders" },
   { pattern: /^cursor$/i, appId: "cursor" },
+  // Browsers
   { pattern: /^msedge$/i, appId: "msedge" },
   { pattern: /^chrome$/i, appId: "chrome" },
   { pattern: /^firefox$/i, appId: "firefox" },
+  { pattern: /^zen$/i, appId: "zen" },
+  { pattern: /^brave$/i, appId: "brave" },
+  { pattern: /^opera$/i, appId: "opera" },
+  { pattern: /^vivaldi$/i, appId: "vivaldi" },
+  { pattern: /^arc$/i, appId: "arc" },
   { pattern: /^discord$/i, appId: "discord" },
   { pattern: /^spotify$/i, appId: "spotify" },
   { pattern: /^steam$/i, appId: "steam" },
@@ -485,6 +497,9 @@ var notificationTracker = createNotificationTracker();
 var mainWindow = null;
 var tray = null;
 var isQuitting = false;
+var ZOOM_STEP = 0.1;
+var ZOOM_MIN = 0.5;
+var ZOOM_MAX = 3;
 var settings = {
   minimizeToTray: true,
   startWithWindows: false
@@ -611,6 +626,28 @@ var createWindow = async () => {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
+    }
+  });
+  const adjustZoom = async (delta) => {
+    const wc = mainWindow?.webContents;
+    if (!wc) return;
+    const current = await wc.getZoomFactor();
+    const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number((current + delta).toFixed(2))));
+    await wc.setZoomFactor(next);
+  };
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    if (input.type !== "keyDown") return;
+    if (!(input.control || input.meta)) return;
+    const isMinus = input.key === "-" || input.code === "Minus" || input.code === "NumpadSubtract";
+    const isPlus = input.key === "+" || input.key === "=" || input.key === "Add" || input.code === "Equal" || input.code === "NumpadAdd" || input.code === "NumpadEqual";
+    if (isMinus) {
+      event.preventDefault();
+      void adjustZoom(-ZOOM_STEP);
+      return;
+    }
+    if (isPlus) {
+      event.preventDefault();
+      void adjustZoom(ZOOM_STEP);
     }
   });
   mainWindow.on("close", (event) => {

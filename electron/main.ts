@@ -15,6 +15,10 @@ let mainWindow: electron.BrowserWindow | null = null
 let tray: electron.Tray | null = null
 let isQuitting = false
 
+const ZOOM_STEP = 0.1
+const ZOOM_MIN = 0.5
+const ZOOM_MAX = 3.0
+
 // Settings stored in memory, synced with renderer
 let settings = {
   minimizeToTray: true,
@@ -176,6 +180,43 @@ const createWindow = async () => {
       nodeIntegration: false,
       sandbox: true,
     },
+  })
+
+  const adjustZoom = async (delta: number) => {
+    const wc = mainWindow?.webContents
+    if (!wc) return
+
+    const current = await wc.getZoomFactor()
+    const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number((current + delta).toFixed(2))))
+    await wc.setZoomFactor(next)
+  }
+
+  // Ctrl +/- zoom controls (Windows/Linux). Also supports Cmd on macOS.
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return
+    if (!(input.control || input.meta)) return
+
+    const isMinus = input.key === '-' || input.code === 'Minus' || input.code === 'NumpadSubtract'
+    // Many layouts report Ctrl+'+' as Ctrl+'=' (same physical key), and browsers commonly
+    // treat Ctrl+=' as zoom-in, so we accept both.
+    const isPlus =
+      input.key === '+' ||
+      input.key === '=' ||
+      input.key === 'Add' ||
+      input.code === 'Equal' ||
+      input.code === 'NumpadAdd' ||
+      input.code === 'NumpadEqual'
+
+    if (isMinus) {
+      event.preventDefault()
+      void adjustZoom(-ZOOM_STEP)
+      return
+    }
+
+    if (isPlus) {
+      event.preventDefault()
+      void adjustZoom(ZOOM_STEP)
+    }
   })
 
   // Handle close button - minimize to tray instead of quitting
