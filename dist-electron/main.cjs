@@ -563,26 +563,51 @@ var generateSuggestions = () => {
   return suggestions;
 };
 var createTray = () => {
-  const iconSize = 16;
-  const icon = nativeImage.createEmpty();
-  const iconPath = isDev ? import_node_path.default.join(__dirname, "..", "public", "icon.png") : import_node_path.default.join(app2.getAppPath(), "dist", "icon.png");
-  let trayIcon;
-  try {
-    trayIcon = nativeImage.createFromPath(iconPath);
-    if (trayIcon.isEmpty()) {
-      throw new Error("Icon not found");
+  const size = 16;
+  const canvas = Buffer.alloc(size * size * 4);
+  const bgColor = { r: 9, g: 9, b: 11, a: 255 };
+  const accentColor = { r: 59, g: 130, b: 246, a: 255 };
+  const white = { r: 250, g: 250, b: 250, a: 255 };
+  const setPixel = (x, y, color) => {
+    if (x < 0 || x >= size || y < 0 || y >= size) return;
+    const i = (y * size + x) * 4;
+    canvas[i] = color.r;
+    canvas[i + 1] = color.g;
+    canvas[i + 2] = color.b;
+    canvas[i + 3] = color.a;
+  };
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      setPixel(x, y, bgColor);
     }
-  } catch {
-    const canvas = Buffer.alloc(16 * 16 * 4);
-    for (let i = 0; i < 16 * 16; i++) {
-      canvas[i * 4] = 79;
-      canvas[i * 4 + 1] = 139;
-      canvas[i * 4 + 2] = 255;
-      canvas[i * 4 + 3] = 255;
-    }
-    trayIcon = nativeImage.createFromBuffer(canvas, { width: 16, height: 16 });
   }
-  tray = new Tray(trayIcon.resize({ width: 16, height: 16 }));
+  for (let x = 2; x <= 13; x++) {
+    setPixel(x, 2, white);
+  }
+  for (let x = 2; x <= 13; x++) {
+    setPixel(x, 10, white);
+  }
+  for (let y = 2; y <= 10; y++) {
+    setPixel(2, y, white);
+  }
+  for (let y = 2; y <= 10; y++) {
+    setPixel(13, y, white);
+  }
+  setPixel(7, 11, white);
+  setPixel(8, 11, white);
+  setPixel(7, 12, white);
+  setPixel(8, 12, white);
+  for (let x = 5; x <= 10; x++) {
+    setPixel(x, 13, white);
+  }
+  setPixel(4, 5, accentColor);
+  setPixel(5, 6, accentColor);
+  setPixel(4, 7, accentColor);
+  for (let x = 7; x <= 11; x++) {
+    setPixel(x, 8, accentColor);
+  }
+  const trayIcon = nativeImage.createFromBuffer(canvas, { width: size, height: size });
+  tray = new Tray(trayIcon);
   tray.setToolTip("ScreenForge - Screen Time Tracker");
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -611,16 +636,80 @@ var createTray = () => {
     }
   });
 };
+var createAppIcon = () => {
+  const size = 32;
+  const canvas = Buffer.alloc(size * size * 4);
+  const bgColor = { r: 9, g: 9, b: 11, a: 255 };
+  const accentColor = { r: 59, g: 130, b: 246, a: 255 };
+  const white = { r: 250, g: 250, b: 250, a: 255 };
+  const setPixel = (x, y, color) => {
+    if (x < 0 || x >= size || y < 0 || y >= size) return;
+    const i = (y * size + x) * 4;
+    canvas[i] = color.r;
+    canvas[i + 1] = color.g;
+    canvas[i + 2] = color.b;
+    canvas[i + 3] = color.a;
+  };
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      setPixel(x, y, bgColor);
+    }
+  }
+  for (let x = 4; x <= 27; x++) {
+    setPixel(x, 4, white);
+    setPixel(x, 5, white);
+  }
+  for (let x = 4; x <= 27; x++) {
+    setPixel(x, 20, white);
+    setPixel(x, 21, white);
+  }
+  for (let y = 4; y <= 21; y++) {
+    setPixel(4, y, white);
+    setPixel(5, y, white);
+  }
+  for (let y = 4; y <= 21; y++) {
+    setPixel(26, y, white);
+    setPixel(27, y, white);
+  }
+  for (let x = 14; x <= 17; x++) {
+    for (let y = 22; y <= 25; y++) {
+      setPixel(x, y, white);
+    }
+  }
+  for (let x = 10; x <= 21; x++) {
+    setPixel(x, 26, white);
+    setPixel(x, 27, white);
+  }
+  for (let i = 0; i < 2; i++) {
+    setPixel(8 + i, 10, accentColor);
+    setPixel(9 + i, 10, accentColor);
+    setPixel(10 + i, 11, accentColor);
+    setPixel(11 + i, 11, accentColor);
+    setPixel(12 + i, 12, accentColor);
+    setPixel(13 + i, 12, accentColor);
+    setPixel(10 + i, 13, accentColor);
+    setPixel(11 + i, 13, accentColor);
+    setPixel(8 + i, 14, accentColor);
+    setPixel(9 + i, 14, accentColor);
+  }
+  for (let x = 15; x <= 24; x++) {
+    setPixel(x, 16, accentColor);
+    setPixel(x, 17, accentColor);
+  }
+  return nativeImage.createFromBuffer(canvas, { width: size, height: size });
+};
 var createWindow = async () => {
+  const appIcon = createAppIcon();
   mainWindow = new BrowserWindow({
     width: 1240,
     height: 820,
     minWidth: 980,
     minHeight: 640,
-    backgroundColor: "#0b0d12",
+    backgroundColor: "#09090b",
     show: false,
     frame: true,
     autoHideMenuBar: true,
+    icon: appIcon,
     webPreferences: {
       preload: import_node_path.default.join(__dirname, "preload.cjs"),
       contextIsolation: true,

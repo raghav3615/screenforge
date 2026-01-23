@@ -101,36 +101,58 @@ const generateSuggestions = () => {
 }
 
 const createTray = () => {
-  // Create a simple tray icon (16x16 colored square)
-  const iconSize = 16
-  const icon = nativeImage.createEmpty()
+  // Create the ScreenForge tray icon programmatically
+  // 16x16 icon with monitor shape in blue accent color
+  const size = 16
+  const canvas = Buffer.alloc(size * size * 4)
   
-  // For Windows, we need an .ico or a PNG. Create a simple colored icon.
-  // In production, you'd use an actual icon file
-  const iconPath = isDev 
-    ? path.join(__dirname, '..', 'public', 'icon.png')
-    : path.join(app.getAppPath(), 'dist', 'icon.png')
+  // Colors matching our theme
+  const bgColor = { r: 9, g: 9, b: 11, a: 255 }      // #09090b - dark bg
+  const accentColor = { r: 59, g: 130, b: 246, a: 255 } // #3b82f6 - blue accent
+  const white = { r: 250, g: 250, b: 250, a: 255 }   // #fafafa
   
-  // Try to load icon, fallback to a generated one
-  let trayIcon: electron.NativeImage
-  try {
-    trayIcon = nativeImage.createFromPath(iconPath)
-    if (trayIcon.isEmpty()) {
-      throw new Error('Icon not found')
-    }
-  } catch {
-    // Create a simple 16x16 icon as fallback
-    const canvas = Buffer.alloc(16 * 16 * 4)
-    for (let i = 0; i < 16 * 16; i++) {
-      canvas[i * 4] = 79      // R
-      canvas[i * 4 + 1] = 139 // G
-      canvas[i * 4 + 2] = 255 // B
-      canvas[i * 4 + 3] = 255 // A
-    }
-    trayIcon = nativeImage.createFromBuffer(canvas, { width: 16, height: 16 })
+  const setPixel = (x: number, y: number, color: { r: number; g: number; b: number; a: number }) => {
+    if (x < 0 || x >= size || y < 0 || y >= size) return
+    const i = (y * size + x) * 4
+    canvas[i] = color.r
+    canvas[i + 1] = color.g
+    canvas[i + 2] = color.b
+    canvas[i + 3] = color.a
   }
   
-  tray = new Tray(trayIcon.resize({ width: 16, height: 16 }))
+  // Fill background
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      setPixel(x, y, bgColor)
+    }
+  }
+  
+  // Draw monitor outline (simplified for 16x16)
+  // Top edge
+  for (let x = 2; x <= 13; x++) { setPixel(x, 2, white) }
+  // Bottom edge of monitor
+  for (let x = 2; x <= 13; x++) { setPixel(x, 10, white) }
+  // Left edge
+  for (let y = 2; y <= 10; y++) { setPixel(2, y, white) }
+  // Right edge
+  for (let y = 2; y <= 10; y++) { setPixel(13, y, white) }
+  
+  // Monitor stand
+  setPixel(7, 11, white); setPixel(8, 11, white)
+  setPixel(7, 12, white); setPixel(8, 12, white)
+  for (let x = 5; x <= 10; x++) { setPixel(x, 13, white) }
+  
+  // Terminal prompt (chevron) - blue accent
+  setPixel(4, 5, accentColor)
+  setPixel(5, 6, accentColor)
+  setPixel(4, 7, accentColor)
+  
+  // Terminal line - blue accent
+  for (let x = 7; x <= 11; x++) { setPixel(x, 8, accentColor) }
+  
+  const trayIcon = nativeImage.createFromBuffer(canvas, { width: size, height: size })
+  
+  tray = new Tray(trayIcon)
   tray.setToolTip('ScreenForge - Screen Time Tracker')
   
   const contextMenu = Menu.buildFromTemplate([
@@ -164,16 +186,79 @@ const createTray = () => {
   })
 }
 
+// Create app icon for window (32x32)
+const createAppIcon = () => {
+  const size = 32
+  const canvas = Buffer.alloc(size * size * 4)
+  
+  const bgColor = { r: 9, g: 9, b: 11, a: 255 }
+  const accentColor = { r: 59, g: 130, b: 246, a: 255 }
+  const white = { r: 250, g: 250, b: 250, a: 255 }
+  
+  const setPixel = (x: number, y: number, color: { r: number; g: number; b: number; a: number }) => {
+    if (x < 0 || x >= size || y < 0 || y >= size) return
+    const i = (y * size + x) * 4
+    canvas[i] = color.r
+    canvas[i + 1] = color.g
+    canvas[i + 2] = color.b
+    canvas[i + 3] = color.a
+  }
+  
+  // Fill with rounded rect background
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      setPixel(x, y, bgColor)
+    }
+  }
+  
+  // Draw monitor outline (scaled for 32x32)
+  // Top edge
+  for (let x = 4; x <= 27; x++) { setPixel(x, 4, white); setPixel(x, 5, white) }
+  // Bottom edge of monitor
+  for (let x = 4; x <= 27; x++) { setPixel(x, 20, white); setPixel(x, 21, white) }
+  // Left edge
+  for (let y = 4; y <= 21; y++) { setPixel(4, y, white); setPixel(5, y, white) }
+  // Right edge
+  for (let y = 4; y <= 21; y++) { setPixel(26, y, white); setPixel(27, y, white) }
+  
+  // Monitor stand
+  for (let x = 14; x <= 17; x++) {
+    for (let y = 22; y <= 25; y++) { setPixel(x, y, white) }
+  }
+  // Stand base
+  for (let x = 10; x <= 21; x++) { setPixel(x, 26, white); setPixel(x, 27, white) }
+  
+  // Terminal chevron - blue accent
+  for (let i = 0; i < 2; i++) {
+    setPixel(8 + i, 10, accentColor); setPixel(9 + i, 10, accentColor)
+    setPixel(10 + i, 11, accentColor); setPixel(11 + i, 11, accentColor)
+    setPixel(12 + i, 12, accentColor); setPixel(13 + i, 12, accentColor)
+    setPixel(10 + i, 13, accentColor); setPixel(11 + i, 13, accentColor)
+    setPixel(8 + i, 14, accentColor); setPixel(9 + i, 14, accentColor)
+  }
+  
+  // Terminal line - blue accent
+  for (let x = 15; x <= 24; x++) { 
+    setPixel(x, 16, accentColor)
+    setPixel(x, 17, accentColor)
+  }
+  
+  return nativeImage.createFromBuffer(canvas, { width: size, height: size })
+}
+
 const createWindow = async () => {
+  const appIcon = createAppIcon()
+  
   mainWindow = new BrowserWindow({
     width: 1240,
     height: 820,
     minWidth: 980,
     minHeight: 640,
-    backgroundColor: '#0b0d12',
+    backgroundColor: '#09090b',
     show: false,
     frame: true,
     autoHideMenuBar: true,
+    icon: appIcon,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,

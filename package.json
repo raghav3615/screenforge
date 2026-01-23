@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"npm:electron:dev\"",
     "electron:dev": "npm run electron:build && wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron dist-electron/main.cjs",
+    "generate:icon": "node scripts/generate-icon.mjs",
+    "prebuild": "npm run generate:icon",
     "build": "tsc -b && vite build && npm run electron:build",
     "electron:build": "esbuild electron/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/main.cjs && esbuild electron/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/preload.cjs",
     "lint": "eslint .",
@@ -15,14 +17,13 @@
     "dist": "npm run build && electron-builder --win nsis"
   },
   "dependencies": {
-    "chart.js": "^4.5.0",
     "@fontsource/inter": "^5.2.5",
+    "chart.js": "^4.5.0",
     "react": "^19.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-      "electron-builder": "^25.1.8",
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
@@ -31,11 +32,13 @@
     "concurrently": "^9.2.1",
     "cross-env": "^7.0.3",
     "electron": "^36.0.0",
+    "electron-builder": "^25.1.8",
     "esbuild": "^0.25.9",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "sharp": "^0.33.5",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "npm:rolldown-vite@7.2.5",
@@ -47,6 +50,7 @@
   "build": {
     "appId": "com.screenforge.app",
     "productName": "ScreenForge",
+    "icon": "build/icon.png",
     "files": [
       "dist/**",
       "dist-electron/**",
@@ -57,7 +61,8 @@
       "output": "release"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.png"
     }
   }
 }
