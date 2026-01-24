@@ -148,6 +148,15 @@ const unknownApp: AppInfo = {
   color: '#6b7280',
 }
 
+// Get today's date in Windows local timezone (consistent with main.ts and frontend)
+const getTodayDateString = (): string => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const toDisplayName = (value: string) =>
   value
     .replace(/[-_]+/g, ' ')
@@ -349,7 +358,7 @@ export const createUsageTracker = (): UsageTracker => {
 
   const record = (appId: string | null, deltaSeconds: number) => {
     if (!appId || deltaSeconds <= 0) return
-    const today = new Date().toISOString().slice(0, 10)
+    const today = getTodayDateString()
     const key = `${today}:${appId}`
     totals.set(key, (totals.get(key) ?? 0) + deltaSeconds)
   }

@@ -383,6 +383,13 @@ var unknownApp = {
   category: "Other",
   color: "#6b7280"
 };
+var getTodayDateString2 = () => {
+  const now = /* @__PURE__ */ new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 var toDisplayName = (value) => value.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 var getDataPath2 = () => {
   const userDataPath = import_electron2.app.getPath("userData");
@@ -555,7 +562,7 @@ var createUsageTracker = () => {
   let runningApps = [];
   const record = (appId, deltaSeconds) => {
     if (!appId || deltaSeconds <= 0) return;
-    const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const today = getTodayDateString2();
     const key = `${today}:${appId}`;
     totals.set(key, (totals.get(key) ?? 0) + deltaSeconds);
   };
@@ -690,7 +697,7 @@ var settings = {
   timeLimitNotificationsEnabled: true
 };
 var shownAlerts = [];
-var getTodayDateString2 = () => {
+var getTodayDateString3 = () => {
   const now = /* @__PURE__ */ new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -738,7 +745,7 @@ var loadAlerts = () => {
     if (fs3.existsSync(alertsPath)) {
       const raw = fs3.readFileSync(alertsPath, "utf8");
       shownAlerts = JSON.parse(raw);
-      const today = getTodayDateString2();
+      const today = getTodayDateString3();
       shownAlerts = shownAlerts.filter((a) => a.date === today);
     }
   } catch {
@@ -760,7 +767,7 @@ var checkTimeLimits = () => {
   if (!settings.timeLimitNotificationsEnabled) return;
   if (settings.timeLimits.length === 0) return;
   const snapshot = usageTracker.getSnapshot();
-  const today = getTodayDateString2();
+  const today = getTodayDateString3();
   const appLookup = new Map(snapshot.apps.map((a) => [a.id, a]));
   const todayUsage = /* @__PURE__ */ new Map();
   for (const entry of snapshot.usageEntries) {

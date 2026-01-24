@@ -361,7 +361,7 @@
 
 .app-card__name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-primary);
 }
 
@@ -377,14 +377,14 @@
 }
 
 .app-card__time {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
 .app-card__percentage {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -409,7 +409,7 @@
 }
 
 .app-card__stat-value {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
 }
