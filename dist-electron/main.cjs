@@ -24,85 +24,290 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // electron/main.ts
 var electron = __toESM(require("electron"), 1);
 var import_node_path = __toESM(require("node:path"), 1);
+var fs3 = __toESM(require("node:fs"), 1);
 
 // electron/notifications.ts
 var import_node_child_process = require("node:child_process");
 var import_node_util = require("node:util");
+var import_electron = require("electron");
+var fs = __toESM(require("node:fs"), 1);
+var path = __toESM(require("node:path"), 1);
 var execFileAsync = (0, import_node_util.promisify)(import_node_child_process.execFile);
 var appIdMap = [
+  // Browsers
   { match: /microsoft\.microsoftedge|msedge/i, appId: "msedge" },
   { match: /chrome/i, appId: "chrome" },
+  { match: /firefox/i, appId: "firefox" },
+  { match: /zen/i, appId: "zen" },
+  { match: /brave/i, appId: "brave" },
+  { match: /opera/i, appId: "opera" },
+  { match: /vivaldi/i, appId: "vivaldi" },
+  { match: /arc/i, appId: "arc" },
+  // Communication
   { match: /discord/i, appId: "discord" },
   { match: /spotify/i, appId: "spotify" },
   { match: /steam/i, appId: "steam" },
-  { match: /teams/i, appId: "teams" },
-  { match: /outlook/i, appId: "outlook" }
+  { match: /teams|ms-teams/i, appId: "teams" },
+  { match: /outlook/i, appId: "outlook" },
+  { match: /slack/i, appId: "slack" },
+  { match: /zoom/i, appId: "zoom" },
+  // Social
+  { match: /whatsapp/i, appId: "whatsapp" },
+  { match: /telegram/i, appId: "telegram" },
+  // Productivity
+  { match: /code|vscode/i, appId: "code" },
+  { match: /cursor/i, appId: "cursor" },
+  { match: /notion/i, appId: "notion" },
+  { match: /winword|word/i, appId: "word" },
+  { match: /excel/i, appId: "excel" },
+  { match: /powerpnt|powerpoint/i, appId: "powerpoint" },
+  { match: /onenote/i, appId: "onenote" },
+  { match: /rider/i, appId: "rider" },
+  { match: /intellij|idea/i, appId: "intellij" },
+  { match: /webstorm/i, appId: "webstorm" },
+  { match: /postman/i, appId: "postman" },
+  { match: /github/i, appId: "github" },
+  { match: /figma/i, appId: "figma" },
+  // Entertainment
+  { match: /netflix/i, appId: "netflix" },
+  { match: /youtube/i, appId: "youtube" },
+  { match: /vlc/i, appId: "vlc" },
+  // Utilities
+  { match: /explorer/i, appId: "explorer" },
+  { match: /terminal|windowsterminal|wt|powershell|cmd/i, appId: "terminal" }
 ];
 var mapAppId = (raw) => {
   if (!raw) return "other";
   const found = appIdMap.find((entry) => entry.match.test(raw));
   return found?.appId ?? "other";
 };
+var logNames = [
+  "Microsoft-Windows-Notifications-Platform/Operational",
+  "Microsoft-Windows-Notifications/Operational"
+];
+var getDataPath = () => {
+  const userDataPath = import_electron.app.getPath("userData");
+  return path.join(userDataPath, "notification-data.json");
+};
+var loadPersistedData = () => {
+  const dataPath = getDataPath();
+  try {
+    if (fs.existsSync(dataPath)) {
+      const raw = fs.readFileSync(dataPath, "utf8");
+      const data = JSON.parse(raw);
+      return data;
+    }
+  } catch {
+  }
+  return { counts: {}, lastPollTime: new Date(Date.now() - 6e4).toISOString() };
+};
+var savePersistedData = (data) => {
+  const dataPath = getDataPath();
+  try {
+    const dir = path.dirname(dataPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+  } catch {
+  }
+};
+var getTodayDateString = () => {
+  const now = /* @__PURE__ */ new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+var enableNotificationLogs = async () => {
+  const results = await Promise.all(
+    logNames.map(async (logName) => {
+      try {
+        await execFileAsync("wevtutil", ["sl", logName, "/e:true"], { timeout: 5e3 });
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: String(err) };
+      }
+    })
+  );
+  const anySuccess = results.some((r) => r.success);
+  if (anySuccess) {
+    return { success: true };
+  }
+  return { success: false, error: "Could not enable notification logs. Administrator access may be required." };
+};
+var checkLogsEnabled = async () => {
+  try {
+    const script = `
+$logEnabled = $false
+$logs = @('${logNames[0]}', '${logNames[1]}')
+foreach ($log in $logs) {
+  try {
+    $config = wevtutil gl $log 2>$null
+    if ($config -match 'enabled:\\s*true') {
+      $logEnabled = $true
+      break
+    }
+  } catch {}
+}
+if ($logEnabled) { 'true' } else { 'false' }
+`;
+    const { stdout } = await execFileAsync("powershell", [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-Command",
+      script
+    ], { timeout: 5e3 });
+    return stdout.trim().toLowerCase() === "true";
+  } catch {
+    return false;
+  }
+};
 var queryNotificationEvents = async (sinceIso) => {
   const script = `
 $since = Get-Date "${sinceIso}"
-$events = Get-WinEvent -LogName Microsoft-Windows-Notifications-Platform/Operational -ErrorAction SilentlyContinue |
-  Where-Object { $_.TimeCreated -gt $since } |
-  Select-Object -First 200
+$logs = @('${logNames[0]}', '${logNames[1]}')
+$events = foreach ($log in $logs) {
+  try {
+    Get-WinEvent -FilterHashtable @{ LogName = $log; StartTime = $since } -ErrorAction SilentlyContinue
+  } catch {
+  }
+}
+if (-not $events) {
+  '[]'
+  exit
+}
+$events = $events | Sort-Object TimeCreated -Descending | Select-Object -First 500
 $events | ForEach-Object {
   $xml = [xml]$_.ToXml()
   $data = $xml.Event.EventData.Data
-  $appId = ($data | Where-Object { $_.Name -eq 'AppId' -or $_.Name -eq 'AppUserModelId' -or $_.Name -eq 'PackageFullName' } | Select-Object -First 1).'#text'
-  [PSCustomObject]@{ appId = $appId; time = $_.TimeCreated }
+  $appId = ($data | Where-Object { $_.Name -in @('AppId', 'AppUserModelId', 'ApplicationId', 'PackageFullName', 'ProcessName', 'ExePath') } | Select-Object -First 1).'#text'
+  if (-not $appId -and $data) {
+    $appId = ($data | Select-Object -First 1).'#text'
+  }
+  [PSCustomObject]@{ appId = $appId; time = $_.TimeCreated.ToString('o') }
 } | ConvertTo-Json -Compress
 `;
-  const { stdout } = await execFileAsync("powershell", [
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-Command",
-    script
-  ]);
-  if (!stdout) return [];
   try {
-    const parsed = JSON.parse(stdout);
-    if (Array.isArray(parsed)) return parsed;
-    return [parsed];
-  } catch {
-    return [];
+    const { stdout, stderr } = await execFileAsync("powershell", [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-Command",
+      script
+    ], { timeout: 1e4 });
+    if (stderr && stderr.includes("No events were found")) {
+      return { events: [] };
+    }
+    if (!stdout) return { events: [] };
+    try {
+      const parsed = JSON.parse(stdout);
+      if (!parsed) return { events: [] };
+      if (Array.isArray(parsed)) return { events: parsed };
+      return { events: [parsed] };
+    } catch {
+      return { events: [] };
+    }
+  } catch (err) {
+    return { events: [], error: String(err) };
   }
 };
 var createNotificationTracker = () => {
-  let lastPoll = new Date(Date.now() - 6e4).toISOString();
-  const counts = /* @__PURE__ */ new Map();
+  let persistedData = loadPersistedData();
+  let logsEnabled = false;
+  let logsChecked = false;
+  let lastError;
+  let saveTimeout = null;
+  const scheduleSave = () => {
+    if (saveTimeout) return;
+    saveTimeout = setTimeout(() => {
+      savePersistedData(persistedData);
+      saveTimeout = null;
+    }, 5e3);
+  };
   const poll = async () => {
-    const events = await queryNotificationEvents(lastPoll);
-    lastPoll = (/* @__PURE__ */ new Date()).toISOString();
-    for (const event of events) {
-      const appKey = mapAppId(event.appId);
-      counts.set(appKey, (counts.get(appKey) ?? 0) + 1);
+    if (!logsChecked) {
+      logsChecked = true;
+      logsEnabled = await checkLogsEnabled();
+      if (!logsEnabled) {
+        const result2 = await enableNotificationLogs();
+        logsEnabled = result2.success;
+        if (!result2.success) {
+          lastError = result2.error;
+        }
+      }
     }
+    if (!logsEnabled) {
+      return "no-logs";
+    }
+    const result = await queryNotificationEvents(persistedData.lastPollTime);
+    if (result.error) {
+      lastError = result.error;
+      return "error";
+    }
+    const today = getTodayDateString();
+    persistedData.lastPollTime = (/* @__PURE__ */ new Date()).toISOString();
+    for (const event of result.events) {
+      const appKey = mapAppId(event.appId);
+      let eventDate = today;
+      if (event.time) {
+        try {
+          const eventDateTime = new Date(event.time);
+          const year = eventDateTime.getFullYear();
+          const month = String(eventDateTime.getMonth() + 1).padStart(2, "0");
+          const day = String(eventDateTime.getDate()).padStart(2, "0");
+          eventDate = `${year}-${month}-${day}`;
+        } catch {
+          eventDate = today;
+        }
+      }
+      if (!persistedData.counts[eventDate]) {
+        persistedData.counts[eventDate] = {};
+      }
+      persistedData.counts[eventDate][appKey] = (persistedData.counts[eventDate][appKey] ?? 0) + 1;
+    }
+    const sevenDaysAgo = /* @__PURE__ */ new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const cutoffDate = `${sevenDaysAgo.getFullYear()}-${String(sevenDaysAgo.getMonth() + 1).padStart(2, "0")}-${String(sevenDaysAgo.getDate()).padStart(2, "0")}`;
+    for (const date of Object.keys(persistedData.counts)) {
+      if (date < cutoffDate) {
+        delete persistedData.counts[date];
+      }
+    }
+    scheduleSave();
+    return "ok";
   };
   const getSummary = async () => {
-    await poll();
-    const perApp = {};
-    for (const [appId, count] of counts.entries()) {
-      perApp[appId] = count;
-    }
+    const status = await poll();
+    const today = getTodayDateString();
+    const todayCounts = persistedData.counts[today] ?? {};
+    const perApp = { ...todayCounts };
+    const total = Object.values(perApp).reduce((sum, value) => sum + value, 0);
     return {
-      total: Object.values(perApp).reduce((sum, value) => sum + value, 0),
-      perApp
+      total,
+      perApp,
+      lastUpdated: (/* @__PURE__ */ new Date()).toISOString(),
+      status,
+      errorMessage: status !== "ok" ? lastError : void 0
     };
   };
-  return { getSummary };
+  const dispose = () => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveTimeout = null;
+    }
+    savePersistedData(persistedData);
+  };
+  return { getSummary, dispose };
 };
 
 // electron/telemetry.ts
 var import_node_child_process2 = require("node:child_process");
 var import_node_util2 = require("node:util");
-var import_electron = require("electron");
-var fs = __toESM(require("node:fs"), 1);
-var path = __toESM(require("node:path"), 1);
+var import_electron2 = require("electron");
+var fs2 = __toESM(require("node:fs"), 1);
+var path2 = __toESM(require("node:path"), 1);
 var execFileAsync2 = (0, import_node_util2.promisify)(import_node_child_process2.execFile);
 var appCatalog = [
   { id: "code", name: "VS Code", category: "Productivity", color: "#35a7ff" },
@@ -201,16 +406,16 @@ var unknownApp = {
   color: "#6b7280"
 };
 var toDisplayName = (value) => value.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-var getDataPath = () => {
-  const userDataPath = import_electron.app.getPath("userData");
-  return path.join(userDataPath, "usage-data.json");
+var getDataPath2 = () => {
+  const userDataPath = import_electron2.app.getPath("userData");
+  return path2.join(userDataPath, "usage-data.json");
 };
-var loadPersistedData = () => {
-  const dataPath = getDataPath();
+var loadPersistedData2 = () => {
+  const dataPath = getDataPath2();
   const map = /* @__PURE__ */ new Map();
   try {
-    if (fs.existsSync(dataPath)) {
-      const raw = fs.readFileSync(dataPath, "utf8");
+    if (fs2.existsSync(dataPath)) {
+      const raw = fs2.readFileSync(dataPath, "utf8");
       const data = JSON.parse(raw);
       for (const [key, value] of Object.entries(data)) {
         map.set(key, value);
@@ -220,18 +425,18 @@ var loadPersistedData = () => {
   }
   return map;
 };
-var savePersistedData = (totals) => {
-  const dataPath = getDataPath();
+var savePersistedData2 = (totals) => {
+  const dataPath = getDataPath2();
   const data = {};
   for (const [key, value] of totals.entries()) {
     data[key] = value;
   }
   try {
-    const dir = path.dirname(dataPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const dir = path2.dirname(dataPath);
+    if (!fs2.existsSync(dir)) {
+      fs2.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+    fs2.writeFileSync(dataPath, JSON.stringify(data, null, 2));
   } catch {
   }
 };
@@ -358,11 +563,11 @@ var mapProcessToAppId = (processName) => {
 };
 var createUsageTracker = () => {
   const appLookup = /* @__PURE__ */ new Map();
-  for (const app3 of appCatalog) {
-    appLookup.set(app3.id, app3);
+  for (const app4 of appCatalog) {
+    appLookup.set(app4.id, app4);
   }
   appLookup.set(unknownApp.id, unknownApp);
-  const totals = loadPersistedData();
+  const totals = loadPersistedData2();
   let interval = null;
   let saveInterval = null;
   const tickMs = 1e3;
@@ -440,7 +645,7 @@ var createUsageTracker = () => {
   }, 5e3);
   refreshRunningApps();
   saveInterval = setInterval(() => {
-    savePersistedData(totals);
+    savePersistedData2(totals);
   }, 3e4);
   return {
     apps: Array.from(appLookup.values()),
@@ -465,13 +670,13 @@ var createUsageTracker = () => {
         });
       }
       const apps = Array.from(appLookup.values()).filter(
-        (app3) => usedAppIds.has(app3.id)
+        (app4) => usedAppIds.has(app4.id)
       );
       return { apps, usageEntries: entries, activeAppId, runningApps };
     },
     clearData: () => {
       totals.clear();
-      savePersistedData(totals);
+      savePersistedData2(totals);
     },
     dispose: () => {
       if (interval) {
@@ -483,13 +688,13 @@ var createUsageTracker = () => {
         saveInterval = null;
       }
       clearInterval(runningAppsInterval);
-      savePersistedData(totals);
+      savePersistedData2(totals);
     }
   };
 };
 
 // electron/main.ts
-var { app: app2, BrowserWindow, Tray, Menu, nativeImage } = electron;
+var { app: app3, BrowserWindow, Tray, Menu, nativeImage, Notification } = electron;
 var { ipcMain } = electron;
 var isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 var usageTracker = createUsageTracker();
@@ -502,7 +707,124 @@ var ZOOM_MIN = 0.5;
 var ZOOM_MAX = 3;
 var settings = {
   minimizeToTray: true,
-  startWithWindows: false
+  startWithWindows: false,
+  timeLimits: [],
+  timeLimitNotificationsEnabled: true
+};
+var shownAlerts = [];
+var getTodayDateString2 = () => {
+  const now = /* @__PURE__ */ new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+var getSettingsPath = () => {
+  const userDataPath = app3.getPath("userData");
+  return import_node_path.default.join(userDataPath, "settings.json");
+};
+var getAlertsPath = () => {
+  const userDataPath = app3.getPath("userData");
+  return import_node_path.default.join(userDataPath, "alerts.json");
+};
+var loadSettings = () => {
+  const settingsPath = getSettingsPath();
+  try {
+    if (fs3.existsSync(settingsPath)) {
+      const raw = fs3.readFileSync(settingsPath, "utf8");
+      const loaded = JSON.parse(raw);
+      settings = {
+        minimizeToTray: loaded.minimizeToTray ?? true,
+        startWithWindows: loaded.startWithWindows ?? false,
+        timeLimits: loaded.timeLimits ?? [],
+        timeLimitNotificationsEnabled: loaded.timeLimitNotificationsEnabled ?? true
+      };
+    }
+  } catch {
+  }
+};
+var saveSettings = () => {
+  const settingsPath = getSettingsPath();
+  try {
+    const dir = import_node_path.default.dirname(settingsPath);
+    if (!fs3.existsSync(dir)) {
+      fs3.mkdirSync(dir, { recursive: true });
+    }
+    fs3.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+  } catch {
+  }
+};
+var loadAlerts = () => {
+  const alertsPath = getAlertsPath();
+  try {
+    if (fs3.existsSync(alertsPath)) {
+      const raw = fs3.readFileSync(alertsPath, "utf8");
+      shownAlerts = JSON.parse(raw);
+      const today = getTodayDateString2();
+      shownAlerts = shownAlerts.filter((a) => a.date === today);
+    }
+  } catch {
+    shownAlerts = [];
+  }
+};
+var saveAlerts = () => {
+  const alertsPath = getAlertsPath();
+  try {
+    const dir = import_node_path.default.dirname(alertsPath);
+    if (!fs3.existsSync(dir)) {
+      fs3.mkdirSync(dir, { recursive: true });
+    }
+    fs3.writeFileSync(alertsPath, JSON.stringify(shownAlerts, null, 2));
+  } catch {
+  }
+};
+var checkTimeLimits = () => {
+  if (!settings.timeLimitNotificationsEnabled) return;
+  if (settings.timeLimits.length === 0) return;
+  const snapshot = usageTracker.getSnapshot();
+  const today = getTodayDateString2();
+  const appLookup = new Map(snapshot.apps.map((a) => [a.id, a]));
+  const todayUsage = /* @__PURE__ */ new Map();
+  for (const entry of snapshot.usageEntries) {
+    if (entry.date === today) {
+      const currentMinutes = todayUsage.get(entry.appId) ?? 0;
+      todayUsage.set(entry.appId, currentMinutes + entry.minutes);
+    }
+  }
+  for (const limit of settings.timeLimits) {
+    if (!limit.enabled) continue;
+    const usedMinutes = todayUsage.get(limit.appId) ?? 0;
+    if (usedMinutes >= limit.limitMinutes) {
+      const alreadyNotified = shownAlerts.some(
+        (a) => a.appId === limit.appId && a.date === today
+      );
+      if (!alreadyNotified) {
+        const appInfo = appLookup.get(limit.appId);
+        const appName = appInfo?.name ?? limit.appId;
+        const notification = new Notification({
+          title: "Time Limit Reached",
+          body: `You've used ${appName} for ${usedMinutes} minutes today. Your limit is ${limit.limitMinutes} minutes.`,
+          icon: void 0,
+          silent: false
+        });
+        notification.show();
+        shownAlerts.push({
+          appId: limit.appId,
+          date: today,
+          notifiedAt: (/* @__PURE__ */ new Date()).toISOString()
+        });
+        saveAlerts();
+        if (mainWindow) {
+          mainWindow.webContents.send("time-limit-exceeded", {
+            appId: limit.appId,
+            appName,
+            usedMinutes,
+            limitMinutes: limit.limitMinutes
+          });
+        }
+      }
+    }
+  }
 };
 var generateSuggestions = () => {
   const snapshot = usageTracker.getSnapshot();
@@ -624,7 +946,7 @@ var createTray = () => {
       label: "Quit",
       click: () => {
         isQuitting = true;
-        app2.quit();
+        app3.quit();
       }
     }
   ]);
@@ -752,18 +1074,20 @@ var createWindow = async () => {
     await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
-    const indexPath = import_node_path.default.join(app2.getAppPath(), "dist", "index.html");
+    const indexPath = import_node_path.default.join(app3.getAppPath(), "dist", "index.html");
     await mainWindow.loadFile(indexPath);
   }
 };
 var setAutoLaunch = (enable) => {
   if (process.platform !== "win32") return;
-  app2.setLoginItemSettings({
+  app3.setLoginItemSettings({
     openAtLogin: enable,
-    path: app2.getPath("exe")
+    path: app3.getPath("exe")
   });
 };
-app2.whenReady().then(() => {
+app3.whenReady().then(() => {
+  loadSettings();
+  loadAlerts();
   ipcMain.handle("usage:snapshot", () => usageTracker.getSnapshot());
   ipcMain.handle("usage:clear", () => {
     usageTracker.clearData();
@@ -780,30 +1104,62 @@ app2.whenReady().then(() => {
       settings.startWithWindows = newSettings.startWithWindows;
       setAutoLaunch(newSettings.startWithWindows);
     }
+    if (Array.isArray(newSettings.timeLimits)) {
+      settings.timeLimits = newSettings.timeLimits;
+    }
+    if (typeof newSettings.timeLimitNotificationsEnabled === "boolean") {
+      settings.timeLimitNotificationsEnabled = newSettings.timeLimitNotificationsEnabled;
+    }
+    saveSettings();
     return settings;
   });
+  ipcMain.handle("timelimits:get", () => settings.timeLimits);
+  ipcMain.handle("timelimits:set", (_event, limits) => {
+    settings.timeLimits = limits;
+    saveSettings();
+    return settings.timeLimits;
+  });
+  ipcMain.handle("timelimits:add", (_event, limit) => {
+    settings.timeLimits = settings.timeLimits.filter((l) => l.appId !== limit.appId);
+    settings.timeLimits.push(limit);
+    saveSettings();
+    return settings.timeLimits;
+  });
+  ipcMain.handle("timelimits:remove", (_event, appId) => {
+    settings.timeLimits = settings.timeLimits.filter((l) => l.appId !== appId);
+    saveSettings();
+    return settings.timeLimits;
+  });
+  ipcMain.handle("timelimits:alerts", () => shownAlerts);
   createTray();
   createWindow();
-  app2.on("activate", () => {
+  const timeLimitInterval = setInterval(checkTimeLimits, 3e4);
+  setTimeout(checkTimeLimits, 5e3);
+  app3.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     } else if (mainWindow) {
       mainWindow.show();
     }
   });
+  app3.on("will-quit", () => {
+    clearInterval(timeLimitInterval);
+  });
 });
-app2.on("before-quit", () => {
+app3.on("before-quit", () => {
   isQuitting = true;
 });
-app2.on("window-all-closed", () => {
+app3.on("window-all-closed", () => {
   if (process.platform === "darwin") {
   } else if (!settings.minimizeToTray) {
     usageTracker.dispose();
-    app2.quit();
+    notificationTracker.dispose();
+    app3.quit();
   }
 });
-app2.on("will-quit", () => {
+app3.on("will-quit", () => {
   usageTracker.dispose();
+  notificationTracker.dispose();
   if (tray) {
     tray.destroy();
     tray = null;

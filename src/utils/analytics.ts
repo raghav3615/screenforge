@@ -1,5 +1,36 @@
 import type { AppInfo, UsageEntry } from '../types/models'
 
+// Get today's date string in local timezone
+export const getTodayDateString = (): string => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Get date string for a specific date offset (0 = today, -1 = yesterday, etc.)
+export const getDateString = (daysOffset: number = 0): string => {
+  const now = new Date()
+  now.setDate(now.getDate() + daysOffset)
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Format a date string for display
+export const formatDateLabel = (dateString: string): string => {
+  const today = getTodayDateString()
+  const yesterday = getDateString(-1)
+  
+  if (dateString === today) return 'Today'
+  if (dateString === yesterday) return 'Yesterday'
+  
+  const date = new Date(dateString + 'T00:00:00')
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
 export const formatMinutes = (minutes: number) => {
   if (minutes === 0) return '0m'
   if (minutes < 1) return '<1m'
@@ -38,6 +69,25 @@ export const groupByDay = (entries: UsageEntry[]) => {
   return map
 }
 
+// Filter entries for a specific date
+export const getEntriesForDate = (entries: UsageEntry[], dateString: string): UsageEntry[] => {
+  return entries.filter(entry => entry.date === dateString)
+}
+
+// Get today's entries
+export const getTodayEntries = (entries: UsageEntry[]): UsageEntry[] => {
+  return getEntriesForDate(entries, getTodayDateString())
+}
+
+// Get available dates from entries (sorted, most recent first)
+export const getAvailableDates = (entries: UsageEntry[]): string[] => {
+  const dates = new Set<string>()
+  for (const entry of entries) {
+    dates.add(entry.date)
+  }
+  return Array.from(dates).sort((a, b) => b.localeCompare(a))
+}
+
 export const getDailyTotals = (entries: UsageEntry[]) => {
   const days = groupByDay(entries)
   return Array.from(days.entries())
@@ -45,6 +95,7 @@ export const getDailyTotals = (entries: UsageEntry[]) => {
     .map(([date, dayEntries]) => ({
       date,
       minutes: getTotalMinutes(dayEntries),
+      seconds: getTotalSeconds(dayEntries),
       notifications: getTotalNotifications(dayEntries),
     }))
 }

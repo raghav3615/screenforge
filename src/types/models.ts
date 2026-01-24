@@ -33,4 +33,29 @@ export interface SuggestionItem {
 export interface NotificationSummary {
   total: number
   perApp: Record<string, number>
+  lastUpdated?: string
+  status?: 'ok' | 'no-logs' | 'error'
+  errorMessage?: string
+}
+
+// Time limit for individual apps (in minutes)
+export interface AppTimeLimit {
+  appId: string
+  limitMinutes: number
+  enabled: boolean
+}
+
+// Settings stored in main process
+export interface AppSettings {
+  minimizeToTray: boolean
+  startWithWindows: boolean
+  timeLimits: AppTimeLimit[]
+  timeLimitNotificationsEnabled: boolean
+}
+
+// Time limit alert that has been shown (to avoid duplicates)
+export interface TimeLimitAlert {
+  appId: string
+  date: string  // YYYY-MM-DD
+  notifiedAt: string  // ISO timestamp
 }

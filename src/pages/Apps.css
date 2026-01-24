@@ -102,6 +102,100 @@
   letter-spacing: 0.04em;
 }
 
+/* Time Limits Summary Section */
+.time-limits-summary {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-soft);
+}
+
+.time-limits-summary__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.time-limits-summary__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.time-limits-summary__sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.time-limits-summary__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.time-limit-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s ease;
+}
+
+.time-limit-pill:hover {
+  border-color: var(--card-border);
+}
+
+.time-limit-pill--exceeded {
+  border-color: var(--danger);
+  background: var(--danger-muted);
+}
+
+.time-limit-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.time-limit-pill__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.time-limit-pill__usage {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.time-limit-pill__bar {
+  width: 60px;
+  height: 4px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.time-limit-pill__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.time-limit-pill__exceeded {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--danger);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .apps-search {
   flex: 1;
   min-width: 200px;
@@ -159,7 +253,7 @@
 
 .apps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 12px;
 }
 
@@ -186,6 +280,14 @@
 .app-card:hover {
   border-color: var(--text-subtle);
   box-shadow: var(--shadow-medium);
+}
+
+.app-card--exceeded {
+  border-color: var(--danger);
+}
+
+.app-card--exceeded:hover {
+  border-color: var(--danger);
 }
 
 .app-card__header {
@@ -254,4 +356,166 @@
   height: 100%;
   border-radius: 2px;
   transition: width 0.3s ease;
+}
+
+/* Time Limit Section in App Card */
+.app-card__limit {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.app-card__set-limit-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px dashed var(--card-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-card__set-limit-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-muted);
+}
+
+.app-card__limit-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.app-card__limit-input {
+  width: 70px;
+  padding: 6px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.app-card__limit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.app-card__limit-unit {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.app-card__limit-save,
+.app-card__limit-cancel {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-card__limit-save {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+}
+
+.app-card__limit-save:hover {
+  background: var(--accent-hover);
+}
+
+.app-card__limit-cancel {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--card-border);
+}
+
+.app-card__limit-cancel:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.app-card__limit-active {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.app-card__limit-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-card__limit-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.app-card__limit-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.app-card__limit-status--exceeded {
+  color: var(--danger);
+}
+
+.app-card__limit-bar {
+  height: 4px;
+  background: var(--panel-bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.app-card__limit-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.app-card__limit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.app-card__limit-edit-btn,
+.app-card__limit-remove-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-card__limit-edit-btn {
+  background: var(--panel-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.app-card__limit-edit-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+  border-color: var(--card-border);
+}
+
+.app-card__limit-remove-btn {
+  background: transparent;
+  color: var(--text-subtle);
+  border: 1px solid transparent;
+}
+
+.app-card__limit-remove-btn:hover {
+  color: var(--danger);
+  background: var(--danger-muted);
 }

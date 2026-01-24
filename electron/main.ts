@@ -1,9 +1,10 @@
 import * as electron from 'electron'
 import path from 'node:path'
+import * as fs from 'node:fs'
 import { createNotificationTracker } from './notifications'
 import { createUsageTracker } from './telemetry'
 
-const { app, BrowserWindow, Tray, Menu, nativeImage } = electron
+const { app, BrowserWindow, Tray, Menu, nativeImage, Notification } = electron
 const { ipcMain } = electron
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
@@ -19,10 +20,178 @@ const ZOOM_STEP = 0.1
 const ZOOM_MIN = 0.5
 const ZOOM_MAX = 3.0
 
-// Settings stored in memory, synced with renderer
-let settings = {
+// App time limit interface
+interface AppTimeLimit {
+  appId: string
+  limitMinutes: number
+  enabled: boolean
+}
+
+// Settings stored in memory, synced with renderer and persisted
+interface AppSettings {
+  minimizeToTray: boolean
+  startWithWindows: boolean
+  timeLimits: AppTimeLimit[]
+  timeLimitNotificationsEnabled: boolean
+}
+
+// Track which alerts have been shown today to avoid spam
+interface TimeLimitAlert {
+  appId: string
+  date: string
+  notifiedAt: string
+}
+
+let settings: AppSettings = {
   minimizeToTray: true,
   startWithWindows: false,
+  timeLimits: [],
+  timeLimitNotificationsEnabled: true,
+}
+
+let shownAlerts: TimeLimitAlert[] = []
+
+// Get today's date in Windows local timezone
+const getTodayDateString = (): string => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const getSettingsPath = () => {
+  const userDataPath = app.getPath('userData')
+  return path.join(userDataPath, 'settings.json')
+}
+
+const getAlertsPath = () => {
+  const userDataPath = app.getPath('userData')
+  return path.join(userDataPath, 'alerts.json')
+}
+
+const loadSettings = () => {
+  const settingsPath = getSettingsPath()
+  try {
+    if (fs.existsSync(settingsPath)) {
+      const raw = fs.readFileSync(settingsPath, 'utf8')
+      const loaded = JSON.parse(raw) as Partial<AppSettings>
+      settings = {
+        minimizeToTray: loaded.minimizeToTray ?? true,
+        startWithWindows: loaded.startWithWindows ?? false,
+        timeLimits: loaded.timeLimits ?? [],
+        timeLimitNotificationsEnabled: loaded.timeLimitNotificationsEnabled ?? true,
+      }
+    }
+  } catch {
+    // Use defaults
+  }
+}
+
+const saveSettings = () => {
+  const settingsPath = getSettingsPath()
+  try {
+    const dir = path.dirname(settingsPath)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2))
+  } catch {
+    // Ignore save errors
+  }
+}
+
+const loadAlerts = () => {
+  const alertsPath = getAlertsPath()
+  try {
+    if (fs.existsSync(alertsPath)) {
+      const raw = fs.readFileSync(alertsPath, 'utf8')
+      shownAlerts = JSON.parse(raw) as TimeLimitAlert[]
+      // Clean up old alerts (not from today)
+      const today = getTodayDateString()
+      shownAlerts = shownAlerts.filter(a => a.date === today)
+    }
+  } catch {
+    shownAlerts = []
+  }
+}
+
+const saveAlerts = () => {
+  const alertsPath = getAlertsPath()
+  try {
+    const dir = path.dirname(alertsPath)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+    fs.writeFileSync(alertsPath, JSON.stringify(shownAlerts, null, 2))
+  } catch {
+    // Ignore save errors
+  }
+}
+
+// Check time limits and show notifications
+const checkTimeLimits = () => {
+  if (!settings.timeLimitNotificationsEnabled) return
+  if (settings.timeLimits.length === 0) return
+
+  const snapshot = usageTracker.getSnapshot()
+  const today = getTodayDateString()
+  const appLookup = new Map(snapshot.apps.map(a => [a.id, a]))
+
+  // Calculate today's usage per app
+  const todayUsage = new Map<string, number>()
+  for (const entry of snapshot.usageEntries) {
+    if (entry.date === today) {
+      const currentMinutes = todayUsage.get(entry.appId) ?? 0
+      todayUsage.set(entry.appId, currentMinutes + entry.minutes)
+    }
+  }
+
+  // Check each time limit
+  for (const limit of settings.timeLimits) {
+    if (!limit.enabled) continue
+
+    const usedMinutes = todayUsage.get(limit.appId) ?? 0
+    if (usedMinutes >= limit.limitMinutes) {
+      // Check if we already showed an alert for this app today
+      const alreadyNotified = shownAlerts.some(
+        a => a.appId === limit.appId && a.date === today
+      )
+
+      if (!alreadyNotified) {
+        const appInfo = appLookup.get(limit.appId)
+        const appName = appInfo?.name ?? limit.appId
+
+        // Show notification
+        const notification = new Notification({
+          title: 'Time Limit Reached',
+          body: `You've used ${appName} for ${usedMinutes} minutes today. Your limit is ${limit.limitMinutes} minutes.`,
+          icon: undefined,
+          silent: false,
+        })
+
+        notification.show()
+
+        // Record the alert
+        shownAlerts.push({
+          appId: limit.appId,
+          date: today,
+          notifiedAt: new Date().toISOString(),
+        })
+        saveAlerts()
+
+        // Send to renderer to update UI
+        if (mainWindow) {
+          mainWindow.webContents.send('time-limit-exceeded', {
+            appId: limit.appId,
+            appName,
+            usedMinutes,
+            limitMinutes: limit.limitMinutes,
+          })
+        }
+      }
+    }
+  }
 }
 
 // Generate dynamic suggestions based on usage patterns
@@ -337,6 +506,10 @@ const setAutoLaunch = (enable: boolean) => {
 }
 
 app.whenReady().then(() => {
+  // Load persisted settings and alerts
+  loadSettings()
+  loadAlerts()
+
   // IPC Handlers
   ipcMain.handle('usage:snapshot', () => usageTracker.getSnapshot())
   ipcMain.handle('usage:clear', () => {
@@ -348,7 +521,7 @@ app.whenReady().then(() => {
   
   // Settings handlers
   ipcMain.handle('settings:get', () => settings)
-  ipcMain.handle('settings:set', (_event, newSettings: Partial<typeof settings>) => {
+  ipcMain.handle('settings:set', (_event, newSettings: Partial<AppSettings>) => {
     if (typeof newSettings.minimizeToTray === 'boolean') {
       settings.minimizeToTray = newSettings.minimizeToTray
     }
@@ -356,8 +529,36 @@ app.whenReady().then(() => {
       settings.startWithWindows = newSettings.startWithWindows
       setAutoLaunch(newSettings.startWithWindows)
     }
+    if (Array.isArray(newSettings.timeLimits)) {
+      settings.timeLimits = newSettings.timeLimits
+    }
+    if (typeof newSettings.timeLimitNotificationsEnabled === 'boolean') {
+      settings.timeLimitNotificationsEnabled = newSettings.timeLimitNotificationsEnabled
+    }
+    saveSettings()
     return settings
   })
+
+  // Time limit handlers
+  ipcMain.handle('timelimits:get', () => settings.timeLimits)
+  ipcMain.handle('timelimits:set', (_event, limits: AppTimeLimit[]) => {
+    settings.timeLimits = limits
+    saveSettings()
+    return settings.timeLimits
+  })
+  ipcMain.handle('timelimits:add', (_event, limit: AppTimeLimit) => {
+    // Remove existing limit for this app if any
+    settings.timeLimits = settings.timeLimits.filter(l => l.appId !== limit.appId)
+    settings.timeLimits.push(limit)
+    saveSettings()
+    return settings.timeLimits
+  })
+  ipcMain.handle('timelimits:remove', (_event, appId: string) => {
+    settings.timeLimits = settings.timeLimits.filter(l => l.appId !== appId)
+    saveSettings()
+    return settings.timeLimits
+  })
+  ipcMain.handle('timelimits:alerts', () => shownAlerts)
 
   // Create tray icon first
   createTray()
@@ -365,12 +566,22 @@ app.whenReady().then(() => {
   // Then create main window
   createWindow()
 
+  // Check time limits every 30 seconds
+  const timeLimitInterval = setInterval(checkTimeLimits, 30000)
+  // Initial check after 5 seconds
+  setTimeout(checkTimeLimits, 5000)
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow()
     } else if (mainWindow) {
       mainWindow.show()
     }
+  })
+
+  // Clean up interval on quit
+  app.on('will-quit', () => {
+    clearInterval(timeLimitInterval)
   })
 })
 
@@ -386,6 +597,7 @@ app.on('window-all-closed', () => {
     // On macOS, keep app running (standard behavior)
   } else if (!settings.minimizeToTray) {
     usageTracker.dispose()
+    notificationTracker.dispose()
     app.quit()
   }
   // If minimizeToTray is true, app stays running in background
@@ -394,6 +606,7 @@ app.on('window-all-closed', () => {
 // Clean up on actual quit
 app.on('will-quit', () => {
   usageTracker.dispose()
+  notificationTracker.dispose()
   if (tray) {
     tray.destroy()
     tray = null

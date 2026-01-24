@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { clearUsageData } from '../services/usageService'
-import type { ThemeName } from '../types/models'
+import { clearUsageData, fetchSettings, updateSettings, fetchTimeLimits } from '../services/usageService'
+import type { ThemeName, AppSettings, AppTimeLimit } from '../types/models'
 import './Settings.css'
 
 interface SettingsProps {
@@ -18,33 +18,53 @@ const themes: { id: ThemeName; name: string; description: string }[] = [
 const Settings = ({ theme, onThemeChange }: SettingsProps) => {
   const [startWithWindows, setStartWithWindows] = useState(false)
   const [minimizeToTray, setMinimizeToTray] = useState(true)
+  const [timeLimitNotificationsEnabled, setTimeLimitNotificationsEnabled] = useState(true)
+  const [timeLimits, setTimeLimits] = useState<AppTimeLimit[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load settings from localStorage
-    const saved = localStorage.getItem('screenforge-settings')
-    if (saved) {
+    // Load settings from main process
+    const loadSettings = async () => {
       try {
-        const parsed = JSON.parse(saved)
-        setStartWithWindows(parsed.startWithWindows ?? false)
-        setMinimizeToTray(parsed.minimizeToTray ?? true)
+        const [settings, limits] = await Promise.all([
+          fetchSettings(),
+          fetchTimeLimits(),
+        ])
+        setStartWithWindows(settings.startWithWindows)
+        setMinimizeToTray(settings.minimizeToTray)
+        setTimeLimitNotificationsEnabled(settings.timeLimitNotificationsEnabled)
+        setTimeLimits(limits)
       } catch {
-        // Ignore parse errors
+        // Fall back to defaults
+      } finally {
+        setLoading(false)
       }
     }
+    loadSettings()
   }, [])
 
-  const saveSettings = (key: string, value: boolean) => {
-    const current = localStorage.getItem('screenforge-settings')
-    let settings: Record<string, boolean> = {}
-    if (current) {
-      try {
-        settings = JSON.parse(current)
-      } catch {
-        // Ignore
-      }
+  const handleSettingChange = async (key: keyof AppSettings, value: boolean) => {
+    try {
+      const updated = await updateSettings({ [key]: value })
+      if (key === 'startWithWindows') setStartWithWindows(updated.startWithWindows)
+      if (key === 'minimizeToTray') setMinimizeToTray(updated.minimizeToTray)
+      if (key === 'timeLimitNotificationsEnabled') setTimeLimitNotificationsEnabled(updated.timeLimitNotificationsEnabled)
+    } catch {
+      // Ignore errors
     }
-    settings[key] = value
-    localStorage.setItem('screenforge-settings', JSON.stringify(settings))
+  }
+
+  if (loading) {
+    return (
+      <>
+        <header className="topbar">
+          <div>
+            <div className="topbar__title">Settings</div>
+            <div className="topbar__subtitle">Loading...</div>
+          </div>
+        </header>
+      </>
+    )
   }
 
   return (
@@ -71,7 +91,6 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
                 <div className="theme-card__name">{t.name}</div>
                 <div className="theme-card__desc">{t.description}</div>
               </div>
-              {theme === t.id && <div className="theme-card__check">✓</div>}
             </button>
           ))}
         </div>
@@ -90,10 +109,7 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
               type="checkbox"
               className="toggle"
               checked={startWithWindows}
-              onChange={(e) => {
-                setStartWithWindows(e.target.checked)
-                saveSettings('startWithWindows', e.target.checked)
-              }}
+              onChange={(e) => handleSettingChange('startWithWindows', e.target.checked)}
             />
           </label>
           <label className="setting-row">
@@ -105,12 +121,39 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
               type="checkbox"
               className="toggle"
               checked={minimizeToTray}
-              onChange={(e) => {
-                setMinimizeToTray(e.target.checked)
-                saveSettings('minimizeToTray', e.target.checked)
-              }}
+              onChange={(e) => handleSettingChange('minimizeToTray', e.target.checked)}
             />
           </label>
+        </div>
+      </section>
+
+      <section className="settings-section">
+        <h3>Time Limits</h3>
+        <p>Control app usage notifications</p>
+        <div className="settings-list">
+          <label className="setting-row">
+            <div className="setting-row__info">
+              <div className="setting-row__label">Time limit notifications</div>
+              <div className="setting-row__desc">Get notified when you exceed app time limits</div>
+            </div>
+            <input
+              type="checkbox"
+              className="toggle"
+              checked={timeLimitNotificationsEnabled}
+              onChange={(e) => handleSettingChange('timeLimitNotificationsEnabled', e.target.checked)}
+            />
+          </label>
+          {timeLimits.length > 0 && (
+            <div className="setting-row setting-row--info">
+              <div className="setting-row__info">
+                <div className="setting-row__label">Active limits</div>
+                <div className="setting-row__desc">
+                  You have {timeLimits.length} app{timeLimits.length !== 1 ? 's' : ''} with time limits. 
+                  Manage them on the Apps page.
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
