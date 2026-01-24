@@ -19,10 +19,12 @@ import type { ThemeName, SuggestionItem, NotificationSummary as NotifSummaryType
 import type { UsageSnapshot } from '../services/usageService'
 import {
   formatMinutes,
+  formatSeconds,
   getAppTotals,
   getCategoryTotals,
   getDailyTotals,
-  getNotificationTotals,
+  getTodayEntries,
+  getTodayDateString,
 } from '../utils/analytics'
 import './Dashboard.css'
 
@@ -45,31 +47,37 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: DashboardProps) => {
-  const { dailyTotals, weeklyAverage, dailyAverage, categoryTotals, appRows, notificationRows } =
-    useMemo(() => {
+  const { 
+    dailyTotals, 
+    todaySeconds,
+    todayAppsCount,
+    todayAppRows,
+    todayCategoryTotals,
+    notificationRows 
+  } = useMemo(() => {
       if (!snapshot) {
         return {
           dailyTotals: [],
-          weeklyAverage: 0,
-          dailyAverage: 0,
-          categoryTotals: [],
-          appRows: [],
+          todayMinutes: 0,
+          todaySeconds: 0,
+          todayAppsCount: 0,
+          todayAppRows: [],
+          todayCategoryTotals: [],
           notificationRows: [],
         }
       }
 
       const totals = getDailyTotals(snapshot.usageEntries)
-      const last7 = totals.slice(-7)
-      const weeklyAverageValue = Math.round(
-        last7.reduce((sum, entry) => sum + entry.minutes, 0) / Math.max(last7.length, 1),
-      )
-      const dailyAverageValue = Math.round(
-        totals.reduce((sum, entry) => sum + entry.minutes, 0) / Math.max(totals.length, 1),
-      )
+      const today = getTodayDateString()
+      const todayData = totals.find(t => t.date === today)
+      
+      // Get today's entries for detailed breakdown
+      const todayEntries = getTodayEntries(snapshot.usageEntries)
+      const todayAppTotals = getAppTotals(todayEntries, snapshot.apps)
+      const todayCats = getCategoryTotals(todayEntries, snapshot.apps)
 
-      const appTotals = getAppTotals(snapshot.usageEntries, snapshot.apps)
-      const notifications = getNotificationTotals(snapshot.usageEntries, snapshot.apps)
-      const notificationMap = new Map(notifications.map((row) => [row.app.id, row.notifications]))
+      // Build notification rows from notificationSummary (which is already today only)
+      const notificationMap = new Map<string, number>()
       if (notificationSummary?.perApp) {
         for (const [appId, count] of Object.entries(notificationSummary.perApp)) {
           if (typeof count === 'number' && Number.isFinite(count)) {
@@ -85,15 +93,15 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
 
       return {
         dailyTotals: totals,
-        weeklyAverage: weeklyAverageValue,
-        dailyAverage: dailyAverageValue,
-        categoryTotals: getCategoryTotals(snapshot.usageEntries, snapshot.apps),
-        appRows: appTotals.map((row) => ({
+        todaySeconds: todayData?.seconds ?? 0,
+        todayAppsCount: todayAppTotals.length,
+        todayAppRows: todayAppTotals.map((row) => ({
           app: row.app,
-          minutes: Math.round(row.minutes / Math.max(totals.length, 1)),
-          seconds: Math.round(row.seconds / Math.max(totals.length, 1)),
+          minutes: row.minutes,
+          seconds: row.seconds,
           notifications: notificationMap.get(row.app.id) ?? 0,
         })),
+        todayCategoryTotals: todayCats,
         notificationRows: summaryRows,
       }
     }, [snapshot, notificationSummary])
@@ -140,36 +148,46 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
   }
 
   const categoryChartData = {
-    labels: categoryTotals.map((row) => row.category),
+    labels: todayCategoryTotals.map((row) => row.category),
     datasets: [
       {
         label: 'Minutes',
-        data: categoryTotals.map((row) => row.minutes),
+        data: todayCategoryTotals.map((row) => row.minutes),
         backgroundColor: ['#4f8bff', '#8c7dff', '#2ed47a', '#ff8b6a', '#f7b955'],
         borderRadius: 12,
       },
     ],
   }
 
-  const todayUsage = dailyTotals.length > 0 ? dailyTotals[dailyTotals.length - 1]?.minutes ?? 0 : 0
-
   return (
     <>
       <header className="topbar">
         <div>
           <div className="topbar__title">{getGreeting()}</div>
-          <div className="topbar__subtitle">Your screen time overview</div>
+          <div className="topbar__subtitle">Your screen time for today</div>
         </div>
       </header>
 
       <section className="stats-grid">
-        <StatCard label="Today" value={formatMinutes(todayUsage)} sub="Total screen time today" />
-        <StatCard label="Daily average" value={formatMinutes(dailyAverage)} sub="Across all apps" />
-        <StatCard label="Weekly average" value={formatMinutes(weeklyAverage)} sub="Last 7 days" />
+        <StatCard 
+          label="Screen Time" 
+          value={formatSeconds(todaySeconds)} 
+          sub="Total today" 
+        />
+        <StatCard 
+          label="Apps Used" 
+          value={`${todayAppsCount}`} 
+          sub="Today" 
+        />
+        <StatCard 
+          label="Top Category" 
+          value={todayCategoryTotals[0]?.category ?? 'None'} 
+          sub={todayCategoryTotals[0] ? formatMinutes(todayCategoryTotals[0].minutes) : 'No data'} 
+        />
         <StatCard
           label="Notifications"
           value={notificationSummary ? `${notificationSummary.total}` : '0'}
-          sub="Total received"
+          sub="Today"
           accent="var(--accent)"
         />
       </section>
@@ -206,11 +224,11 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
           <div className="card__header">
             <div>
               <h3>Categories</h3>
-              <p>Minutes by app category</p>
+              <p>Time by category today</p>
             </div>
-            <span className="chip">All time</span>
+            <span className="chip">Today</span>
           </div>
-          {categoryTotals.length > 0 ? (
+          {todayCategoryTotals.length > 0 ? (
             <Bar
               data={categoryChartData}
               options={{
@@ -231,7 +249,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
       </section>
 
       <section className="grid grid--two">
-        <AppUsageTable rows={appRows.slice(0, 6)} />
+        <AppUsageTable rows={todayAppRows.slice(0, 6)} title="Top Apps Today" />
         {notificationSummary && <NotificationSummary total={notificationSummary.total} rows={notificationRows.slice(0, 6)} />}
       </section>
 
@@ -275,8 +293,8 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
               <span className="session-card__value">{activeAppName}</span>
             </div>
             <div className="session-card__row">
-              <span className="session-card__label">Apps tracked</span>
-              <span className="session-card__value">{snapshot?.apps.length ?? 0}</span>
+              <span className="session-card__label">Apps used today</span>
+              <span className="session-card__value">{todayAppsCount}</span>
             </div>
             <div className="session-card__row">
               <span className="session-card__label">Days recorded</span>

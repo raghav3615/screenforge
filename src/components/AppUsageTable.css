@@ -81,3 +81,10 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+.table__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}

@@ -65,10 +65,12 @@ const mapAppId = (raw?: string) => {
   return found?.appId ?? 'other'
 }
 
-const logNames = [
-  'Microsoft-Windows-Notifications-Platform/Operational',
-  'Microsoft-Windows-Notifications/Operational',
-]
+// The correct Windows event log for push notifications
+const logName = 'Microsoft-Windows-PushNotification-Platform/Operational'
+
+// Event IDs that represent actual notifications with app info
+// 1010: Notification received - use this one to avoid double-counting
+const notificationEventIds = [1010]
 
 const getDataPath = () => {
   const userDataPath = app.getPath('userData')
@@ -118,39 +120,19 @@ const getTodayDateString = (): string => {
 }
 
 const enableNotificationLogs = async (): Promise<{ success: boolean; error?: string }> => {
-  const results = await Promise.all(
-    logNames.map(async (logName) => {
-      try {
-        await execFileAsync('wevtutil', ['sl', logName, '/e:true'], { timeout: 5000 })
-        return { success: true }
-      } catch (err) {
-        return { success: false, error: String(err) }
-      }
-    }),
-  )
-  
-  const anySuccess = results.some(r => r.success)
-  if (anySuccess) {
+  try {
+    await execFileAsync('wevtutil', ['sl', logName, '/e:true'], { timeout: 5000 })
     return { success: true }
+  } catch (err) {
+    return { success: false, error: String(err) }
   }
-  return { success: false, error: 'Could not enable notification logs. Administrator access may be required.' }
 }
 
 const checkLogsEnabled = async (): Promise<boolean> => {
   try {
     const script = `
-$logEnabled = $false
-$logs = @('${logNames[0]}', '${logNames[1]}')
-foreach ($log in $logs) {
-  try {
-    $config = wevtutil gl $log 2>$null
-    if ($config -match 'enabled:\\s*true') {
-      $logEnabled = $true
-      break
-    }
-  } catch {}
-}
-if ($logEnabled) { 'true' } else { 'false' }
+$config = wevtutil gl '${logName}' 2>$null
+if ($config -match 'enabled:\\s*true') { 'true' } else { 'false' }
 `
     const { stdout } = await execFileAsync('powershell', [
       '-NoProfile',
@@ -167,15 +149,15 @@ if ($logEnabled) { 'true' } else { 'false' }
 }
 
 const queryNotificationEvents = async (sinceIso: string): Promise<{ events: Array<{ appId?: string; time?: string }>; error?: string }> => {
+  // Filter for specific event IDs that contain notification info
+  const eventIdFilter = notificationEventIds.join(',')
   const script = `
 $since = Get-Date "${sinceIso}"
-$logs = @('${logNames[0]}', '${logNames[1]}')
-$events = foreach ($log in $logs) {
-  try {
-    Get-WinEvent -FilterHashtable @{ LogName = $log; StartTime = $since } -ErrorAction SilentlyContinue
-  } catch {
-  }
-}
+$events = Get-WinEvent -FilterHashtable @{ 
+  LogName = '${logName}'
+  StartTime = $since
+  Id = ${eventIdFilter}
+} -ErrorAction SilentlyContinue
 if (-not $events) {
   '[]'
   exit
@@ -184,11 +166,11 @@ $events = $events | Sort-Object TimeCreated -Descending | Select-Object -First 5
 $events | ForEach-Object {
   $xml = [xml]$_.ToXml()
   $data = $xml.Event.EventData.Data
-  $appId = ($data | Where-Object { $_.Name -in @('AppId', 'AppUserModelId', 'ApplicationId', 'PackageFullName', 'ProcessName', 'ExePath') } | Select-Object -First 1).'#text'
-  if (-not $appId -and $data) {
-    $appId = ($data | Select-Object -First 1).'#text'
+  # Look for AppUserModelId which contains the app identifier
+  $appId = ($data | Where-Object { $_.Name -eq 'AppUserModelId' } | Select-Object -First 1).'#text'
+  if ($appId) {
+    [PSCustomObject]@{ appId = $appId; time = $_.TimeCreated.ToString('o') }
   }
-  [PSCustomObject]@{ appId = $appId; time = $_.TimeCreated.ToString('o') }
 } | ConvertTo-Json -Compress
 `
 
