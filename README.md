@@ -2,9 +2,10 @@
 
 ScreenForge is an open-source Windows screen time dashboard built with Electron + React + TypeScript. It shows usage by app/category, daily/weekly/monthly averages, notification counts, and productivity insights with modern theming.
 
-## Demo Video
-[![Demo Video](https://img.youtube.com/vi/8N5Uhrui0fw/0.jpg)](https://youtu.be/8N5Uhrui0fw?si=6xh-7QcRl48MY706)
+## Demo Video 
+[![Demo Video](https://github.com/user-attachments/assets/1def204d-c1f2-44e7-8136-c0a3768ebdd0)](https://youtu.be/8N5Uhrui0fw?si=6xh-7QcRl48MY706)
 
+Check out demo on YouTube: https://youtu.be/8N5Uhrui0fw?si=OSA-CyGoBVvZXoOT 
 ## Features
 
 - Multi-theme UI (light, dark, tokyo, skin)
