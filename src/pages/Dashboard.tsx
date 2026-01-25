@@ -114,7 +114,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
     dailyTotals, 
     todaySeconds,
     todayAppsCount,
-    weeklyAvgMinutes,
+    dailyAvgMinutes,
     todayAppRows,
     todayCategoryTotals,
     notificationRows 
@@ -125,7 +125,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
           todayMinutes: 0,
           todaySeconds: 0,
           todayAppsCount: 0,
-          weeklyAvgMinutes: 0,
+          dailyAvgMinutes: 0,
           todayAppRows: [],
           todayCategoryTotals: [],
           notificationRows: [],
@@ -160,16 +160,15 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
         .filter((row) => row.notifications > 0)
         .sort((a, b) => b.notifications - a.notifications)
 
-      // Calculate weekly average
-      const last7Days = totals.slice(-7)
-      const weeklyTotalMinutes = last7Days.reduce((sum, d) => sum + d.minutes, 0)
-      const weeklyAvg = last7Days.length > 0 ? Math.round(weeklyTotalMinutes / last7Days.length) : 0
+      // Calculate daily average across all recorded days
+      const totalMinutes = totals.reduce((sum, d) => sum + d.minutes, 0)
+      const dailyAvg = totals.length > 0 ? Math.round(totalMinutes / totals.length) : 0
 
       return {
         dailyTotals: totals,
         todaySeconds: todayData?.seconds ?? 0,
         todayAppsCount: todayAppTotals.length,
-        weeklyAvgMinutes: weeklyAvg,
+        dailyAvgMinutes: dailyAvg,
         todayAppRows: todayAppTotals.map((row) => ({
           app: row.app,
           minutes: row.minutes,
@@ -250,9 +249,9 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
           sub="Total today" 
         />
         <StatCard 
-          label="Weekly Avg" 
-          value={formatMinutes(weeklyAvgMinutes)} 
-          sub="Daily average" 
+          label="Daily Avg" 
+          value={formatMinutes(dailyAvgMinutes)} 
+          sub={dailyTotals.length > 0 ? `Across ${dailyTotals.length} days` : 'No history yet'}
         />
         <StatCard 
           label="Top Category" 
