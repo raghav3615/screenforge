@@ -114,6 +114,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
     dailyTotals, 
     todaySeconds,
     todayAppsCount,
+    weeklyAvgMinutes,
     todayAppRows,
     todayCategoryTotals,
     notificationRows 
@@ -124,6 +125,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
           todayMinutes: 0,
           todaySeconds: 0,
           todayAppsCount: 0,
+          weeklyAvgMinutes: 0,
           todayAppRows: [],
           todayCategoryTotals: [],
           notificationRows: [],
@@ -158,10 +160,16 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
         .filter((row) => row.notifications > 0)
         .sort((a, b) => b.notifications - a.notifications)
 
+      // Calculate weekly average
+      const last7Days = totals.slice(-7)
+      const weeklyTotalMinutes = last7Days.reduce((sum, d) => sum + d.minutes, 0)
+      const weeklyAvg = last7Days.length > 0 ? Math.round(weeklyTotalMinutes / last7Days.length) : 0
+
       return {
         dailyTotals: totals,
         todaySeconds: todayData?.seconds ?? 0,
         todayAppsCount: todayAppTotals.length,
+        weeklyAvgMinutes: weeklyAvg,
         todayAppRows: todayAppTotals.map((row) => ({
           app: row.app,
           minutes: row.minutes,
@@ -242,9 +250,9 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
           sub="Total today" 
         />
         <StatCard 
-          label="Apps Used" 
-          value={`${todayAppsCount}`} 
-          sub="Today" 
+          label="Weekly Avg" 
+          value={formatMinutes(weeklyAvgMinutes)} 
+          sub="Daily average" 
         />
         <StatCard 
           label="Top Category" 

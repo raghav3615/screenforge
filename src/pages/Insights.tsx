@@ -12,7 +12,7 @@ import {
 import { Doughnut, Line } from 'react-chartjs-2'
 import type { UsageSnapshot } from '../services/usageService'
 import type { ThemeName } from '../types/models'
-import { formatMinutes, getDailyTotals, getCategoryTotals, getAppTotals, calculateFocusScore } from '../utils/analytics'
+import { formatMinutes, getDailyTotals, getCategoryTotals, getAppTotals, calculateFocusScore, getTodayEntries } from '../utils/analytics'
 import './Insights.css'
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
@@ -28,7 +28,7 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
     categoryTotals,
     appTotals,
     focusScore,
-    productivityRatio,
+    todayAppsCount,
     topAppName,
     topCategoryName,
     peakDayLabel,
@@ -39,7 +39,7 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
         categoryTotals: [],
         appTotals: [],
         focusScore: 0,
-        productivityRatio: 0,
+        todayAppsCount: 0,
         topAppName: 'N/A',
         topCategoryName: 'N/A',
         peakDayLabel: 'N/A',
@@ -53,6 +53,10 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
     // Calculate focus score using shared utility
     const score = calculateFocusScore(snapshot.usageEntries, snapshot.apps)
 
+    // Get today's apps count
+    const todayEntries = getTodayEntries(snapshot.usageEntries)
+    const todayAppTotals = getAppTotals(todayEntries, snapshot.apps)
+
     const topApp = apps.length > 0 ? apps[0] : null
     const topCategory = categories.length > 0 ? categories[0] : null
     const peakDay = totals.length > 0 ? totals.reduce((best, cur) => (cur.minutes > best.minutes ? cur : best), totals[0]) : null
@@ -62,7 +66,7 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
       categoryTotals: categories,
       appTotals: apps,
       focusScore: score,
-      productivityRatio: score,
+      todayAppsCount: todayAppTotals.length,
       topAppName: topApp?.app.name ?? 'N/A',
       topCategoryName: topCategory?.category ?? 'N/A',
       peakDayLabel: peakDay ? new Date(peakDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A',
@@ -124,9 +128,9 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
           <div className="insight-hero-card__sub">Based on productive app usage</div>
         </div>
         <div className="insight-hero-card">
-          <div className="insight-hero-card__label">Productivity</div>
-          <div className="insight-hero-card__value">{productivityRatio}%</div>
-          <div className="insight-hero-card__sub">Time in productive apps</div>
+          <div className="insight-hero-card__label">Apps Used</div>
+          <div className="insight-hero-card__value">{todayAppsCount}</div>
+          <div className="insight-hero-card__sub">Today</div>
         </div>
         <div className="insight-hero-card">
           <div className="insight-hero-card__label">Top app</div>
