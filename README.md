@@ -4,7 +4,7 @@ ScreenForge is an open-source Windows screen time dashboard built with Electron 
 
 ## Preview
 
-<img width="2400" height="1350" alt="stage-1768759373973" src="https://github.com/user-attachments/assets/a9ac2d86-4e4f-4974-955f-ac9c1efbe078" />
+<img width="2400" height="1350" alt="Preview" src="https://github.com/user-attachments/assets/293ec0c5-1d16-4197-bc90-452cf73d2295" />
 
 ## Features
 
