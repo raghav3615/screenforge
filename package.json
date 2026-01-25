@@ -1,7 +1,18 @@
 {
   "name": "screenforge",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "A Windows screen time dashboard that tracks app usage, notifications, and provides productivity insights",
+  "author": {
+    "name": "Raghav Dadhich",
+    "email": "dadhichraghav896@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/raghav3615/screenforge",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raghav3615/screenforge"
+  },
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
@@ -14,7 +25,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:start": "electron dist-electron/main.cjs",
-    "dist": "npm run build && electron-builder --win nsis"
+    "dist": "npm run build && electron-builder --win nsis",
+    "dist:portable": "npm run build && electron-builder --win portable"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.5",
@@ -50,7 +62,11 @@
   "build": {
     "appId": "com.screenforge.app",
     "productName": "ScreenForge",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "copyright": "Copyright © 2026 ScreenForge Team",
     "icon": "build/icon.png",
+    "asar": true,
+    "compression": "maximum",
     "files": [
       "dist/**",
       "dist-electron/**",
@@ -61,8 +77,34 @@
       "output": "release"
     },
     "win": {
-      "target": "nsis",
-      "icon": "build/icon.png"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "publisherName": "ScreenForge Team",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ScreenForge",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
     }
   }
 }
