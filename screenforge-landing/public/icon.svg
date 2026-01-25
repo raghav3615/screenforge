@@ -1,0 +1,17 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <rect width="256" height="256" rx="48" fill="#09090b"/>
+  
+  <!-- Monitor frame -->
+  <rect x="32" y="40" width="192" height="136" rx="16" stroke="#fafafa" stroke-width="12" fill="none"/>
+  
+  <!-- Monitor stand -->
+  <path d="M88 216h80" stroke="#fafafa" stroke-width="12" stroke-linecap="round"/>
+  <path d="M128 176v40" stroke="#fafafa" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- Terminal chevron -->
+  <path d="M72 88l32 32-32 32" stroke="#3b82f6" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Terminal line -->
+  <path d="M120 152h64" stroke="#3b82f6" stroke-width="14" stroke-linecap="round"/>
+</svg>
