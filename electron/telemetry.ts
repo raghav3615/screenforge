@@ -132,6 +132,7 @@ const processPatterns: Array<{ pattern: RegExp; appId: string }> = [
   { pattern: /^photoshop$/i, appId: 'photoshop' },
   { pattern: /^premiere/i, appId: 'premiere' },
   { pattern: /^blender$/i, appId: 'blender' },
+  { pattern: /^whatsapp\.root$/i, appId: 'whatsapp' },
   { pattern: /^whatsapp$/i, appId: 'whatsapp' },
   { pattern: /^telegram$/i, appId: 'telegram' },
   { pattern: /^githubdesktop$/i, appId: 'github' },

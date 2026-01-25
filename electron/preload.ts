@@ -63,6 +63,13 @@ const api = {
       }
     }
   },
+  setTheme: async (theme: 'light' | 'dark' | 'tokyo' | 'skin') => {
+    try {
+      return await ipcRenderer.invoke('theme:set', theme)
+    } catch {
+      return false
+    }
+  },
   // Settings
   getSettings: async (): Promise<AppSettings> => {
     try {

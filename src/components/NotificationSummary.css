@@ -16,54 +16,96 @@
   gap: 12px;
 }
 
+.notification-card__title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .notification-card__header h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.01em;
+  color: var(--text-primary);
 }
 
-.notification-card__header p {
-  margin: 4px 0 0;
+.notification-card__badge {
+  background: var(--accent-muted);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.notification-card__date {
+  font-size: 12px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-weight: 500;
 }
 
 .notification-card__list {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+
+.notification-card__empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 0;
 }
 
 .notification-card__row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 120px 1fr 40px;
   align-items: center;
+  gap: 12px;
   font-size: 13px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-subtle);
-  transition: background 0.1s ease;
 }
 
-.notification-card__row:last-child {
-  border-bottom: none;
-}
-
-.notification-card__row:hover {
-  background: var(--hover-bg);
-  margin: 0 -8px;
-  padding-left: 8px;
-  padding-right: 8px;
-  border-radius: 6px;
-}
-
-.notification-card__app {
+.notification-card__app-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
+}
+
+.notification-card__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notification-card__app-name {
   color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-card__bar-container {
+  height: 6px;
+  background: var(--panel-bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.notification-card__bar {
+  height: 100%;
+  border-radius: 3px;
+  min-width: 4px;
+  opacity: 0.7;
+  transition: width 0.3s ease;
 }
 
 .notification-card__count {
   font-weight: 600;
-  color: var(--accent);
+  color: var(--text-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }

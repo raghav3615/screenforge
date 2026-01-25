@@ -15,7 +15,7 @@ import StatCard from '../components/StatCard'
 import AppUsageTable from '../components/AppUsageTable'
 import NotificationSummary from '../components/NotificationSummary'
 import SuggestionPanel from '../components/SuggestionPanel'
-import type { ThemeName, SuggestionItem, NotificationSummary as NotifSummaryType } from '../types/models'
+import type { ThemeName, SuggestionItem, NotificationSummary as NotifSummaryType, AppInfo } from '../types/models'
 import type { UsageSnapshot } from '../services/usageService'
 import {
   formatMinutes,
@@ -45,6 +45,22 @@ interface DashboardProps {
   notificationSummary: NotifSummaryType | null
   theme: ThemeName
 }
+
+const formatAppName = (appId: string): string => {
+  const raw = appId.replace(/^proc:/i, '')
+  const lower = raw.toLowerCase()
+  if (lower === 'whatsapp' || lower === 'whatsapp.root') return 'WhatsApp'
+  return raw
+    .replace(/[._-]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+const buildFallbackApp = (appId: string): AppInfo => ({
+  id: appId,
+  name: formatAppName(appId),
+  category: 'Other',
+  color: '#6b7280',
+})
 
 const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: DashboardProps) => {
   const { 
@@ -86,8 +102,12 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
         }
       }
 
-      const summaryRows = snapshot.apps
-        .map((app) => ({ app, notifications: notificationMap.get(app.id) ?? 0 }))
+      const appLookup = new Map(snapshot.apps.map((app) => [app.id, app]))
+      const summaryRows = Array.from(notificationMap.entries())
+        .map(([appId, notifications]) => ({
+          app: appLookup.get(appId) ?? buildFallbackApp(appId),
+          notifications,
+        }))
         .filter((row) => row.notifications > 0)
         .sort((a, b) => b.notifications - a.notifications)
 
@@ -187,7 +207,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
         <StatCard
           label="Notifications"
           value={notificationSummary ? `${notificationSummary.total}` : '0'}
-          sub="Today"
+          sub={notificationRows[0] ? `Top: ${notificationRows[0].app.name}` : 'Today'}
           accent="var(--accent)"
         />
       </section>

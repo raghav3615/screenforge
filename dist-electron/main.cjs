@@ -369,6 +369,7 @@ var processPatterns = [
   { pattern: /^photoshop$/i, appId: "photoshop" },
   { pattern: /^premiere/i, appId: "premiere" },
   { pattern: /^blender$/i, appId: "blender" },
+  { pattern: /^whatsapp\.root$/i, appId: "whatsapp" },
   { pattern: /^whatsapp$/i, appId: "whatsapp" },
   { pattern: /^telegram$/i, appId: "telegram" },
   { pattern: /^githubdesktop$/i, appId: "github" },
@@ -690,6 +691,24 @@ var isQuitting = false;
 var ZOOM_STEP = 0.1;
 var ZOOM_MIN = 0.5;
 var ZOOM_MAX = 3;
+var themeTitlebar = {
+  dark: { background: "#09090b", text: "#fafafa" },
+  light: { background: "#fafafa", text: "#09090b" },
+  tokyo: { background: "#0f0b1a", text: "#f0e6ff" },
+  skin: { background: "#f3eee9", text: "#2d1e17" }
+};
+var applyThemeToWindow = (theme) => {
+  if (!mainWindow) return;
+  const colors = themeTitlebar[theme] ?? themeTitlebar.dark;
+  try {
+    mainWindow.setTitleBarOverlay({ color: colors.background, symbolColor: colors.text });
+  } catch {
+  }
+  try {
+    mainWindow.setBackgroundColor(colors.background);
+  } catch {
+  }
+};
 var settings = {
   minimizeToTray: true,
   startWithWindows: false,
@@ -1012,9 +1031,10 @@ var createWindow = async () => {
     height: 820,
     minWidth: 980,
     minHeight: 640,
-    backgroundColor: "#09090b",
+    backgroundColor: themeTitlebar.dark.background,
     show: false,
     frame: true,
+    titleBarStyle: "default",
     autoHideMenuBar: true,
     icon: appIcon,
     webPreferences: {
@@ -1077,6 +1097,10 @@ app3.whenReady().then(() => {
   ipcMain.handle("usage:clear", () => {
     usageTracker.clearData();
     return usageTracker.getSnapshot();
+  });
+  ipcMain.handle("theme:set", (_event, theme) => {
+    applyThemeToWindow(theme);
+    return true;
   });
   ipcMain.handle("suggestions:list", () => generateSuggestions());
   ipcMain.handle("notifications:summary", () => notificationTracker.getSummary());

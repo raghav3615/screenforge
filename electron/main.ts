@@ -20,6 +20,30 @@ const ZOOM_STEP = 0.1
 const ZOOM_MIN = 0.5
 const ZOOM_MAX = 3.0
 
+type ThemeName = 'light' | 'dark' | 'tokyo' | 'skin'
+
+const themeTitlebar: Record<ThemeName, { background: string; text: string }> = {
+  dark: { background: '#09090b', text: '#fafafa' },
+  light: { background: '#fafafa', text: '#09090b' },
+  tokyo: { background: '#0f0b1a', text: '#f0e6ff' },
+  skin: { background: '#f3eee9', text: '#2d1e17' },
+}
+
+const applyThemeToWindow = (theme: ThemeName) => {
+  if (!mainWindow) return
+  const colors = themeTitlebar[theme] ?? themeTitlebar.dark
+  try {
+    mainWindow.setTitleBarOverlay({ color: colors.background, symbolColor: colors.text })
+  } catch {
+    // Ignore if unsupported (older Electron / platform)
+  }
+  try {
+    mainWindow.setBackgroundColor(colors.background)
+  } catch {
+    // Ignore if unsupported
+  }
+}
+
 // App time limit interface
 interface AppTimeLimit {
   appId: string
@@ -423,9 +447,10 @@ const createWindow = async () => {
     height: 820,
     minWidth: 980,
     minHeight: 640,
-    backgroundColor: '#09090b',
+    backgroundColor: themeTitlebar.dark.background,
     show: false,
     frame: true,
+    titleBarStyle: 'default',
     autoHideMenuBar: true,
     icon: appIcon,
     webPreferences: {
@@ -515,6 +540,10 @@ app.whenReady().then(() => {
   ipcMain.handle('usage:clear', () => {
     usageTracker.clearData()
     return usageTracker.getSnapshot()
+  })
+  ipcMain.handle('theme:set', (_event, theme: ThemeName) => {
+    applyThemeToWindow(theme)
+    return true
   })
   ipcMain.handle('suggestions:list', () => generateSuggestions())
   ipcMain.handle('notifications:summary', () => notificationTracker.getSummary())

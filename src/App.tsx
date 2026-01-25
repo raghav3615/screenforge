@@ -37,6 +37,7 @@ const App = () => {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('screenforge-theme', theme)
+    window.screenforge?.setTheme?.(theme)
   }, [theme])
 
   useEffect(() => {

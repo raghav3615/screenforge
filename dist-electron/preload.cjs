@@ -73,6 +73,13 @@ var api = {
       };
     }
   },
+  setTheme: async (theme) => {
+    try {
+      return await ipcRenderer.invoke("theme:set", theme);
+    } catch {
+      return false;
+    }
+  },
   // Settings
   getSettings: async () => {
     try {

@@ -16,7 +16,7 @@
   background: var(--sidebar-bg);
   border-right: 1px solid var(--card-border);
   padding: 24px 16px;
-  padding-top: 40px;
+  padding-top: calc(40px + env(titlebar-area-height, 0px));
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -120,7 +120,7 @@
    ======================================== */
 .main {
   padding: 24px 32px 40px;
-  padding-top: 40px;
+  padding-top: calc(40px + env(titlebar-area-height, 0px));
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -151,6 +151,12 @@
   display: flex;
   justify-content: flex-end;
   margin-bottom: -4px;
+  padding: 8px 12px;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  margin-left: auto;
+  width: fit-content;
 }
 
 /* ========================================
@@ -161,6 +167,16 @@
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+  -webkit-app-region: drag;
+}
+
+.topbar__actions,
+.topbar button,
+.topbar a,
+.topbar input,
+.topbar select,
+.topbar textarea {
+  -webkit-app-region: no-drag;
 }
 
 .topbar__title {
@@ -188,10 +204,10 @@
 .theme-switcher {
   display: flex;
   gap: 4px;
-  background: var(--panel-bg);
+  background: var(--card-bg);
   padding: 4px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
 }
 
 .theme-pill {
