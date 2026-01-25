@@ -25,17 +25,23 @@ const appIdMap: Array<{ match: RegExp; appId: string }> = [
   { match: /opera/i, appId: 'opera' },
   { match: /vivaldi/i, appId: 'vivaldi' },
   { match: /arc/i, appId: 'arc' },
-  // Communication
+  // Communication / Messaging
   { match: /discord/i, appId: 'discord' },
-  { match: /spotify/i, appId: 'spotify' },
-  { match: /steam/i, appId: 'steam' },
-  { match: /teams|ms-teams/i, appId: 'teams' },
-  { match: /outlook/i, appId: 'outlook' },
-  { match: /slack/i, appId: 'slack' },
-  { match: /zoom/i, appId: 'zoom' },
-  // Social
   { match: /whatsapp/i, appId: 'whatsapp' },
   { match: /telegram/i, appId: 'telegram' },
+  { match: /signal/i, appId: 'signal' },
+  { match: /messenger/i, appId: 'messenger' },
+  { match: /skype/i, appId: 'skype' },
+  { match: /teams|ms-teams/i, appId: 'teams' },
+  { match: /slack/i, appId: 'slack' },
+  { match: /zoom/i, appId: 'zoom' },
+  // Media
+  { match: /spotify/i, appId: 'spotify' },
+  { match: /steam/i, appId: 'steam' },
+  // Email
+  { match: /outlook/i, appId: 'outlook' },
+  { match: /mail/i, appId: 'mail' },
+  { match: /gmail/i, appId: 'gmail' },
   // Productivity
   { match: /code|vscode/i, appId: 'code' },
   { match: /cursor/i, appId: 'cursor' },
@@ -50,27 +56,29 @@ const appIdMap: Array<{ match: RegExp; appId: string }> = [
   { match: /postman/i, appId: 'postman' },
   { match: /github/i, appId: 'github' },
   { match: /figma/i, appId: 'figma' },
+  { match: /todoist/i, appId: 'todoist' },
+  { match: /trello/i, appId: 'trello' },
   // Entertainment
   { match: /netflix/i, appId: 'netflix' },
   { match: /youtube/i, appId: 'youtube' },
   { match: /vlc/i, appId: 'vlc' },
+  { match: /twitch/i, appId: 'twitch' },
   // Utilities
   { match: /explorer/i, appId: 'explorer' },
   { match: /terminal|windowsterminal|wt|powershell|cmd/i, appId: 'terminal' },
+  // System
+  { match: /windows\.systemtoast/i, appId: 'system' },
+  { match: /settings/i, appId: 'settings' },
+  { match: /store/i, appId: 'store' },
+  { match: /defender/i, appId: 'defender' },
+  { match: /security/i, appId: 'security' },
 ]
 
-const mapAppId = (raw?: string) => {
+const mapAppId = (raw?: string): string => {
   if (!raw) return 'other'
   const found = appIdMap.find((entry) => entry.match.test(raw))
   return found?.appId ?? 'other'
 }
-
-// The correct Windows event log for push notifications
-const logName = 'Microsoft-Windows-PushNotification-Platform/Operational'
-
-// Event IDs that represent actual notifications with app info
-// 1010: Notification received - use this one to avoid double-counting
-const notificationEventIds = [1010]
 
 const getDataPath = () => {
   const userDataPath = app.getPath('userData')
@@ -80,6 +88,7 @@ const getDataPath = () => {
 interface PersistedNotificationData {
   counts: Record<string, Record<string, number>> // date -> appId -> count
   lastPollTime: string
+  seenNotificationIds: string[] // Track seen notifications to avoid duplicates
 }
 
 const loadPersistedData = (): PersistedNotificationData => {
@@ -88,12 +97,16 @@ const loadPersistedData = (): PersistedNotificationData => {
     if (fs.existsSync(dataPath)) {
       const raw = fs.readFileSync(dataPath, 'utf8')
       const data = JSON.parse(raw) as PersistedNotificationData
-      return data
+      return {
+        counts: data.counts ?? {},
+        lastPollTime: data.lastPollTime ?? new Date(Date.now() - 60_000).toISOString(),
+        seenNotificationIds: data.seenNotificationIds ?? [],
+      }
     }
   } catch {
     // Ignore load errors, start fresh
   }
-  return { counts: {}, lastPollTime: new Date(Date.now() - 60_000).toISOString() }
+  return { counts: {}, lastPollTime: new Date(Date.now() - 60_000).toISOString(), seenNotificationIds: [] }
 }
 
 const savePersistedData = (data: PersistedNotificationData) => {
@@ -112,66 +125,139 @@ const savePersistedData = (data: PersistedNotificationData) => {
 // Get today's date in the Windows system timezone
 const getTodayDateString = (): string => {
   const now = new Date()
-  // Use local date components to respect Windows timezone
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
 
-const enableNotificationLogs = async (): Promise<{ success: boolean; error?: string }> => {
-  try {
-    await execFileAsync('wevtutil', ['sl', logName, '/e:true'], { timeout: 5000 })
-    return { success: true }
-  } catch (err) {
-    return { success: false, error: String(err) }
-  }
-}
-
-const checkLogsEnabled = async (): Promise<boolean> => {
-  try {
-    const script = `
-$config = wevtutil gl '${logName}' 2>$null
-if ($config -match 'enabled:\\s*true') { 'true' } else { 'false' }
-`
-    const { stdout } = await execFileAsync('powershell', [
-      '-NoProfile',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-Command',
-      script,
-    ], { timeout: 5000 })
-    
-    return stdout.trim().toLowerCase() === 'true'
-  } catch {
-    return false
-  }
-}
-
-const queryNotificationEvents = async (sinceIso: string): Promise<{ events: Array<{ appId?: string; time?: string }>; error?: string }> => {
-  // Filter for specific event IDs that contain notification info
-  const eventIdFilter = notificationEventIds.join(',')
+// Query notifications from Action Center and various Windows logs
+const queryNotifications = async (): Promise<{ notifications: Array<{ appId: string; id: string; time: string }>; error?: string }> => {
+  // PowerShell script that queries multiple notification sources
   const script = `
-$since = Get-Date "${sinceIso}"
-$events = Get-WinEvent -FilterHashtable @{ 
-  LogName = '${logName}'
-  StartTime = $since
-  Id = ${eventIdFilter}
-} -ErrorAction SilentlyContinue
-if (-not $events) {
-  '[]'
-  exit
+$ErrorActionPreference = 'SilentlyContinue'
+$today = (Get-Date).Date
+$notifications = @()
+
+# Method 1: Query Action Center notifications via Settings Sync events
+# These are more reliably captured
+$logNames = @(
+    'Microsoft-Windows-PushNotification-Platform/Operational',
+    'Microsoft-Windows-TWinUI/Operational'
+)
+
+foreach ($logName in $logNames) {
+    try {
+        $enabled = (wevtutil gl $logName 2>$null) -match 'enabled:\\s*true'
+        if (-not $enabled) {
+            wevtutil sl $logName /e:true 2>$null
+        }
+        
+        $events = Get-WinEvent -FilterHashtable @{
+            LogName = $logName
+            StartTime = $today
+        } -MaxEvents 200 -ErrorAction SilentlyContinue
+
+        foreach ($event in $events) {
+            $xml = [xml]$event.ToXml()
+            $eventData = $xml.Event.EventData.Data
+            
+            # Try different field names for app ID
+            $appId = $null
+            foreach ($field in @('AppUserModelId', 'AppId', 'ApplicationId', 'PackageName')) {
+                $val = ($eventData | Where-Object { $_.Name -eq $field } | Select-Object -First 1).'#text'
+                if ($val) { $appId = $val; break }
+            }
+            
+            if (-not $appId) {
+                # Try getting from message
+                if ($event.Message -match 'AppUserModelId[=:]\\s*([^\\s,]+)') {
+                    $appId = $Matches[1]
+                }
+            }
+            
+            if ($appId -and $appId -notmatch 'SystemSettings|ShellExperienceHost|StartMenuExperienceHost|SearchUI|LockApp') {
+                $notifications += [PSCustomObject]@{
+                    id = "$($logName)_$($event.RecordId)"
+                    appId = $appId
+                    time = $event.TimeCreated.ToString('o')
+                }
+            }
+        }
+    } catch {}
 }
-$events = $events | Sort-Object TimeCreated -Descending | Select-Object -First 500
-$events | ForEach-Object {
-  $xml = [xml]$_.ToXml()
-  $data = $xml.Event.EventData.Data
-  # Look for AppUserModelId which contains the app identifier
-  $appId = ($data | Where-Object { $_.Name -eq 'AppUserModelId' } | Select-Object -First 1).'#text'
-  if ($appId) {
-    [PSCustomObject]@{ appId = $appId; time = $_.TimeCreated.ToString('o') }
-  }
-} | ConvertTo-Json -Compress
+
+# Method 2: Read from notification database if sqlite3 is available
+try {
+    $dbPath = "$env:LOCALAPPDATA\\Microsoft\\Windows\\Notifications\\wpndatabase.db"
+    if (Test-Path $dbPath) {
+        # Copy to temp location since original is locked
+        $tempDb = [System.IO.Path]::GetTempFileName()
+        [System.IO.File]::Copy($dbPath, $tempDb, $true)
+        
+        # Check if sqlite3 exists
+        $sqlite = Get-Command sqlite3.exe -ErrorAction SilentlyContinue
+        if ($sqlite) {
+            $todayStart = [int64](($today.ToUniversalTime() - [DateTime]'1970-01-01T00:00:00Z').TotalSeconds)
+            $query = "SELECT n.Id, n.ArrivalTime, h.PrimaryId, h.DisplayName FROM Notification n LEFT JOIN NotificationHandler h ON n.HandlerId = h.RecordId WHERE n.ArrivalTime >= $todayStart ORDER BY n.ArrivalTime DESC LIMIT 300;"
+            
+            $result = & sqlite3.exe -separator '|' $tempDb $query 2>$null
+            if ($result) {
+                foreach ($line in $result) {
+                    $parts = $line -split '\\|'
+                    if ($parts.Count -ge 3) {
+                        $nId = $parts[0]
+                        $arrivalTime = $parts[1]
+                        $primaryId = $parts[2]
+                        
+                        if ($primaryId -and $primaryId -notmatch 'SystemSettings|ShellExperienceHost') {
+                            # Convert arrival time (Unix timestamp) to ISO format
+                            $timeStr = try {
+                                [DateTime]::UnixEpoch.AddSeconds([long]$arrivalTime).ToString('o')
+                            } catch { (Get-Date).ToString('o') }
+                            
+                            $notifications += [PSCustomObject]@{
+                                id = "db_$nId"
+                                appId = $primaryId
+                                time = $timeStr
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Remove-Item $tempDb -Force -ErrorAction SilentlyContinue
+    }
+} catch {}
+
+# Method 3: Read notification settings to get app list with notification counts from registry
+try {
+    $notifSettingsPath = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings'
+    if (Test-Path $notifSettingsPath) {
+        $apps = Get-ChildItem $notifSettingsPath -ErrorAction SilentlyContinue
+        foreach ($appKey in $apps) {
+            $appId = $appKey.PSChildName
+            # Skip system apps
+            if ($appId -match 'SystemSettings|ShellExperienceHost|StartMenuExperienceHost|SearchUI|LockApp|Cortana') {
+                continue
+            }
+            # Check if this app has notifications enabled
+            $enabled = Get-ItemProperty -Path $appKey.PSPath -Name 'Enabled' -ErrorAction SilentlyContinue
+            if ($enabled -and $enabled.Enabled -eq 1) {
+                # This app has notifications enabled - we track it if we see notifications
+            }
+        }
+    }
+} catch {}
+
+# Remove duplicates and output
+$unique = $notifications | Sort-Object id -Unique
+
+if ($unique.Count -eq 0) {
+    Write-Output '[]'
+} else {
+    $unique | ConvertTo-Json -Compress -Depth 3
+}
 `
 
   try {
@@ -181,30 +267,31 @@ $events | ForEach-Object {
       'Bypass',
       '-Command',
       script,
-    ], { timeout: 10000 })
+    ], { timeout: 30000 })
 
-    if (stderr && stderr.includes('No events were found')) {
-      return { events: [] }
+    if (!stdout || stdout.trim() === '' || stdout.trim() === '[]') {
+      return { notifications: [] }
     }
 
-    if (!stdout) return { events: [] }
     try {
-      const parsed = JSON.parse(stdout)
-      if (!parsed) return { events: [] }
-      if (Array.isArray(parsed)) return { events: parsed }
-      return { events: [parsed] }
+      const parsed = JSON.parse(stdout.trim())
+      if (Array.isArray(parsed)) {
+        return { notifications: parsed }
+      }
+      if (parsed && typeof parsed === 'object') {
+        return { notifications: [parsed] }
+      }
+      return { notifications: [] }
     } catch {
-      return { events: [] }
+      return { notifications: [], error: 'Failed to parse notification data' }
     }
   } catch (err) {
-    return { events: [], error: String(err) }
+    return { notifications: [], error: String(err) }
   }
 }
 
 export const createNotificationTracker = () => {
   let persistedData = loadPersistedData()
-  let logsEnabled = false
-  let logsChecked = false
   let lastError: string | undefined
   let saveTimeout: NodeJS.Timeout | null = null
 
@@ -217,53 +304,60 @@ export const createNotificationTracker = () => {
   }
 
   const poll = async (): Promise<'ok' | 'no-logs' | 'error'> => {
-    // Check if logs are enabled first time
-    if (!logsChecked) {
-      logsChecked = true
-      logsEnabled = await checkLogsEnabled()
-      if (!logsEnabled) {
-        const result = await enableNotificationLogs()
-        logsEnabled = result.success
-        if (!result.success) {
-          lastError = result.error
-        }
-      }
-    }
-
-    if (!logsEnabled) {
-      return 'no-logs'
-    }
-
-    const result = await queryNotificationEvents(persistedData.lastPollTime)
+    const result = await queryNotifications()
     
     if (result.error) {
       lastError = result.error
-      return 'error'
     }
 
     const today = getTodayDateString()
     persistedData.lastPollTime = new Date().toISOString()
 
-    for (const event of result.events) {
-      const appKey = mapAppId(event.appId)
-      // Extract date from event time or use today
+    // Process new notifications
+    for (const notif of result.notifications) {
+      // Skip if we've already seen this notification
+      if (persistedData.seenNotificationIds.includes(notif.id)) {
+        continue
+      }
+
+      const appId = mapAppId(notif.appId)
+      
+      // Skip 'other' category to reduce noise
+      if (appId === 'other') {
+        persistedData.seenNotificationIds.push(notif.id)
+        continue
+      }
+      
+      // Extract date from notification time or use today
       let eventDate = today
-      if (event.time) {
+      if (notif.time) {
         try {
-          const eventDateTime = new Date(event.time)
-          const year = eventDateTime.getFullYear()
-          const month = String(eventDateTime.getMonth() + 1).padStart(2, '0')
-          const day = String(eventDateTime.getDate()).padStart(2, '0')
-          eventDate = `${year}-${month}-${day}`
+          const eventDateTime = new Date(notif.time)
+          if (!isNaN(eventDateTime.getTime())) {
+            const year = eventDateTime.getFullYear()
+            const month = String(eventDateTime.getMonth() + 1).padStart(2, '0')
+            const day = String(eventDateTime.getDate()).padStart(2, '0')
+            eventDate = `${year}-${month}-${day}`
+          }
         } catch {
           eventDate = today
         }
       }
       
-      if (!persistedData.counts[eventDate]) {
-        persistedData.counts[eventDate] = {}
+      // Only count today's notifications
+      if (eventDate === today) {
+        if (!persistedData.counts[eventDate]) {
+          persistedData.counts[eventDate] = {}
+        }
+        persistedData.counts[eventDate][appId] = (persistedData.counts[eventDate][appId] ?? 0) + 1
       }
-      persistedData.counts[eventDate][appKey] = (persistedData.counts[eventDate][appKey] ?? 0) + 1
+      
+      persistedData.seenNotificationIds.push(notif.id)
+    }
+
+    // Keep only recent notification IDs (last 2000)
+    if (persistedData.seenNotificationIds.length > 2000) {
+      persistedData.seenNotificationIds = persistedData.seenNotificationIds.slice(-1000)
     }
 
     // Clean up old data (keep last 7 days)
@@ -278,6 +372,7 @@ export const createNotificationTracker = () => {
     }
 
     scheduleSave()
+    
     return 'ok'
   }
 

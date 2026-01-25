@@ -55,12 +55,59 @@ const formatAppName = (appId: string): string => {
     .replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
-const buildFallbackApp = (appId: string): AppInfo => ({
-  id: appId,
-  name: formatAppName(appId),
-  category: 'Other',
-  color: '#6b7280',
-})
+// Known app catalog for notifications that may not be in usage data
+const knownApps: Record<string, { name: string; category: string; color: string }> = {
+  discord: { name: 'Discord', category: 'Social', color: '#8c7dff' },
+  whatsapp: { name: 'WhatsApp', category: 'Social', color: '#25d366' },
+  telegram: { name: 'Telegram', category: 'Social', color: '#0088cc' },
+  slack: { name: 'Slack', category: 'Communication', color: '#e91e63' },
+  teams: { name: 'Microsoft Teams', category: 'Communication', color: '#5b7cfa' },
+  outlook: { name: 'Outlook', category: 'Communication', color: '#2f6fff' },
+  mail: { name: 'Mail', category: 'Communication', color: '#2f6fff' },
+  gmail: { name: 'Gmail', category: 'Communication', color: '#ea4335' },
+  spotify: { name: 'Spotify', category: 'Entertainment', color: '#2ed47a' },
+  steam: { name: 'Steam', category: 'Entertainment', color: '#ff8b6a' },
+  chrome: { name: 'Google Chrome', category: 'Browsers', color: '#f7b955' },
+  msedge: { name: 'Microsoft Edge', category: 'Browsers', color: '#4f8bff' },
+  firefox: { name: 'Firefox', category: 'Browsers', color: '#ff6611' },
+  zoom: { name: 'Zoom', category: 'Communication', color: '#2d8cff' },
+  skype: { name: 'Skype', category: 'Communication', color: '#00aff0' },
+  messenger: { name: 'Messenger', category: 'Social', color: '#0084ff' },
+  signal: { name: 'Signal', category: 'Social', color: '#3a76f0' },
+  notion: { name: 'Notion', category: 'Productivity', color: '#1f1f1f' },
+  figma: { name: 'Figma', category: 'Productivity', color: '#f24e1e' },
+  github: { name: 'GitHub', category: 'Productivity', color: '#6e5494' },
+  code: { name: 'VS Code', category: 'Productivity', color: '#35a7ff' },
+  cursor: { name: 'Cursor', category: 'Productivity', color: '#00d4ff' },
+  system: { name: 'System', category: 'System', color: '#6b7280' },
+  settings: { name: 'Settings', category: 'System', color: '#6b7280' },
+  store: { name: 'Microsoft Store', category: 'System', color: '#0078d4' },
+  defender: { name: 'Windows Defender', category: 'System', color: '#0078d4' },
+  security: { name: 'Windows Security', category: 'System', color: '#0078d4' },
+  twitch: { name: 'Twitch', category: 'Entertainment', color: '#9146ff' },
+  youtube: { name: 'YouTube', category: 'Entertainment', color: '#ff0000' },
+  netflix: { name: 'Netflix', category: 'Entertainment', color: '#e50914' },
+  todoist: { name: 'Todoist', category: 'Productivity', color: '#e44332' },
+  trello: { name: 'Trello', category: 'Productivity', color: '#0079bf' },
+}
+
+const buildFallbackApp = (appId: string): AppInfo => {
+  const known = knownApps[appId.toLowerCase()]
+  if (known) {
+    return {
+      id: appId,
+      name: known.name,
+      category: known.category,
+      color: known.color,
+    }
+  }
+  return {
+    id: appId,
+    name: formatAppName(appId),
+    category: 'Other',
+    color: '#6b7280',
+  }
+}
 
 const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: DashboardProps) => {
   const { 
