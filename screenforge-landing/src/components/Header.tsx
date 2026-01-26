@@ -7,7 +7,7 @@ import Image from 'next/image'
 import clsx from 'clsx'
 
 const navLinks = [
-  { label: 'Features', href: '#features' },
+  { label: 'Features', href: '/#features' },
   { label: 'FAQ', href: '/faq' },
 ]
 
@@ -83,7 +83,7 @@ export default function Header() {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
           {/* GitHub Stars */}
           <a
             href={`https://github.com/${GITHUB_REPO}`}
@@ -94,7 +94,8 @@ export default function Header() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z" />
             </svg>
-            <span>{stars !== null ? stars : '–'}</span> stars on GitHub
+            <span>{stars !== null ? stars : '–'}</span>
+            <span className="hidden lg:inline">stars on Github</span>
           </a>
 
           {/* Theme Toggle */}
@@ -129,7 +130,7 @@ export default function Header() {
             href="https://x.com/raghav_dadhich"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors hidden sm:flex"
+            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors hidden md:flex"
             aria-label="X (Twitter)"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -138,7 +139,7 @@ export default function Header() {
           </a>
 
           {/* Download Button */}
-          <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary hidden sm:flex">
+          <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary hidden md:flex text-sm px-4 py-2">
             Download
           </a>
 
@@ -175,7 +176,7 @@ export default function Header() {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-[var(--bg-primary)] border-t border-[var(--border)]"
           >
-            <div className="px-6 py-4 flex flex-col gap-4">
+            <div className="px-4 py-4 flex flex-col gap-2">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
