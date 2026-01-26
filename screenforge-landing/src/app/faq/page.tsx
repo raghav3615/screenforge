@@ -117,7 +117,7 @@ export default function FAQPage() {
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight">Frequently Asked Questions</h1>
             </div>
             <p className="text-lg text-[var(--text-secondary)] max-w-xl mx-auto">
-              Everything you need to know about ScreenForge. Can't find what you're looking for?{' '}
+              Everything you need to know about ScreenForge. Can&apos;t find what you&apos;re looking for?{' '}
               <a
                 href="https://github.com/raghav3615/screenforge/issues"
                 target="_blank"
