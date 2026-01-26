@@ -25,7 +25,7 @@ const itemVariants = {
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+    <section className="relative min-h-screen flex flex-col pt-20 overflow-hidden mb-20">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -35,6 +35,22 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-8 items-center">
           {/* Left: Text Content */}
           <div className="order-2 lg:order-1">
+            {/* Product Hunt Badge */}
+            <motion.div variants={itemVariants} className="mb-4">
+              <a
+                href="https://www.producthunt.com/products/screenforge?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-screenforge"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1068186&theme=dark&t=1769411375009"
+                  alt="ScreenForge - Know your screen, Locally. Track smarter. Control better. | Product Hunt"
+                  width="250"
+                  height="54"
+                />
+              </a>
+            </motion.div>
+
             <motion.div variants={itemVariants} className="flex items-center gap-2 mb-6">
 
               <span className="inline-flex items-center px-3 py-1.5 rounded-md bg-[var(--bg-secondary)] border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)]">
