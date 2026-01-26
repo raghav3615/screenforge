@@ -2,15 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light theme (skin color palette with black accent) */
+/* Light theme (warm skin color palette with black accent) */
 :root {
-  --bg-primary: #fdf8f6;
-  --bg-secondary: #f9ede8;
-  --bg-tertiary: #f5e0d6;
+  --bg-primary: #f9ebe4;
+  --bg-secondary: #f3ddd2;
+  --bg-tertiary: #ecd0c2;
   --text-primary: #1a1a1a;
   --text-secondary: #4a4a4a;
   --text-muted: #7a7a7a;
-  --border: rgba(0, 0, 0, 0.08);
+  --border: rgba(0, 0, 0, 0.1);
   --accent: #1a1a1a;
   --accent-hover: #333333;
   --accent-secondary: #404040;

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, Menu, X } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -72,7 +71,9 @@ export function Navbar() {
                                 "bg-secondary hover:bg-secondary/80"
                             )}
                         >
-                            <Star className="w-4 h-4" />
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z" />
+                            </svg>
                             <span>Star</span>
                         </a>
 
@@ -83,7 +84,18 @@ export function Navbar() {
                             className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
                             aria-label="Toggle menu"
                         >
-                            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                            {mobileMenuOpen ? (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            ) : (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="4" y1="6" x2="20" y2="6" />
+                                    <line x1="4" y1="12" x2="20" y2="12" />
+                                    <line x1="4" y1="18" x2="20" y2="18" />
+                                </svg>
+                            )}
                         </button>
                     </div>
                 </div>

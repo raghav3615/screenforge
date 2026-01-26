@@ -34,97 +34,56 @@ const features = [
 function FeatureMockup({ type }: { type: string }) {
   if (type === 'insights') {
     return (
-      <div className="p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-medium">Daily Usage</div>
-          <div className="flex gap-1">
-            {['D', 'W', 'M'].map((t, i) => (
-              <span key={i} className={`px-2 py-0.5 text-xs rounded ${i === 0 ? 'bg-[#3b82f6] text-white' : 'text-[var(--text-muted)]'}`}>{t}</span>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-end gap-1.5 h-28 pt-4">
-          {[35, 55, 42, 78, 65, 45, 60, 52, 70, 48, 82, 58].map((h, i) => (
-            <div key={i} className="flex-1 rounded-t bg-[#3b82f6]/70 hover:bg-[#3b82f6] transition-colors" style={{ height: `${h}%` }} />
-          ))}
-        </div>
-        <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
-          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-        </div>
+      <div className="relative w-full">
+        <Image
+          src="/feature-insights.png"
+          alt="Insights Dashboard"
+          width={800}
+          height={500}
+          className="w-full h-auto"
+        />
       </div>
     )
   }
 
   if (type === 'apps') {
-    const apps = [
-      { name: 'VS Code', time: '2h 14m', percent: 45, color: '#3b82f6' },
-      { name: 'Chrome', time: '1h 32m', percent: 32, color: '#60a5fa' },
-      { name: 'Slack', time: '45m', percent: 15, color: '#93c5fd' },
-      { name: 'Spotify', time: '28m', percent: 8, color: '#bfdbfe' },
-    ]
     return (
-      <div className="p-4 space-y-3">
-        <div className="text-sm font-medium mb-4">Top Apps Today</div>
-        {apps.map((app, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg" style={{ background: app.color }} />
-            <div className="flex-1">
-              <div className="flex justify-between text-sm mb-1">
-                <span>{app.name}</span>
-                <span className="text-[var(--text-muted)]">{app.time}</span>
-              </div>
-              <div className="h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${app.percent}%`, background: app.color }} />
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="relative w-full">
+        <Image
+          src="/feature-apps.png"
+          alt="Apps Dashboard"
+          width={800}
+          height={500}
+          className="w-full h-auto"
+        />
       </div>
     )
   }
 
   if (type === 'notifications') {
-    const notifs = [
-      { app: 'Discord', count: 23 },
-      { app: 'WhatsApp', count: 18 },
-      { app: 'Mail', count: 12 },
-      { app: 'Teams', count: 8 },
-    ]
     return (
-      <div className="p-4 space-y-3">
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-sm font-medium">Notifications Today</div>
-          <div className="text-2xl font-bold text-[#3b82f6]">61</div>
-        </div>
-        <div className="space-y-2">
-          {notifs.map((n, i) => (
-            <div key={i} className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
-              <span className="text-sm">{n.app}</span>
-              <span className="px-2 py-0.5 text-xs bg-[var(--bg-tertiary)] rounded-full">{n.count}</span>
-            </div>
-          ))}
-        </div>
+      <div className="relative w-full">
+        <Image
+          src="/feature-notifications.png"
+          alt="Notifications Dashboard"
+          width={800}
+          height={500}
+          className="w-full h-auto"
+        />
       </div>
     )
   }
 
   if (type === 'settings') {
     return (
-      <div className="p-4 space-y-4">
-        <div className="text-sm font-medium mb-4">Appearance</div>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { name: 'Dark', bg: '#0a0a0a', active: true },
-            { name: 'Light', bg: '#fdf8f6', active: false },
-            { name: 'Tokyo', bg: '#1a1b26', active: false },
-            { name: 'Skin', bg: '#f5e0d6', active: false },
-          ].map((theme, i) => (
-            <div key={i} className={`p-3 rounded-lg border ${theme.active ? 'border-[#3b82f6]' : 'border-[var(--border)]'}`}>
-              <div className="w-full h-8 rounded mb-2" style={{ background: theme.bg, border: '1px solid var(--border)' }} />
-              <div className="text-xs text-center">{theme.name}</div>
-            </div>
-          ))}
-        </div>
+      <div className="relative w-full">
+        <Image
+          src="/feature-settings.png"
+          alt="Settings Dashboard"
+          width={800}
+          height={500}
+          className="w-full h-auto"
+        />
       </div>
     )
   }
@@ -136,7 +95,7 @@ function FeatureSection({ feature, index }: { feature: typeof features[0]; index
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
   const isEven = index % 2 === 0
-  
+
   return (
     <motion.div
       ref={ref}
@@ -147,7 +106,7 @@ function FeatureSection({ feature, index }: { feature: typeof features[0]; index
     >
       <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${isEven ? '' : 'lg:grid-flow-dense'}`}>
         {/* Text Content */}
-        <motion.div 
+        <motion.div
           className={isEven ? '' : 'lg:col-start-2'}
           initial={{ opacity: 0, x: isEven ? -30 : 30 }}
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: isEven ? -30 : 30 }}
@@ -162,7 +121,7 @@ function FeatureSection({ feature, index }: { feature: typeof features[0]; index
         </motion.div>
 
         {/* Image/Preview */}
-        <motion.div 
+        <motion.div
           className={isEven ? '' : 'lg:col-start-1'}
           initial={{ opacity: 0, x: isEven ? 30 : -30 }}
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: isEven ? 30 : -30 }}
@@ -182,7 +141,7 @@ function FeatureSection({ feature, index }: { feature: typeof features[0]; index
                   <span className="text-xs text-[var(--text-muted)]">ScreenForge — {feature.title}</span>
                 </div>
               </div>
-              
+
               {/* Content */}
               <div className="bg-[var(--bg-tertiary)] min-h-[240px]">
                 <FeatureMockup type={feature.image} />
@@ -201,7 +160,7 @@ export default function Features() {
 
   return (
     <section id="features" className="section">
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <motion.div
           ref={headerRef}
@@ -210,7 +169,7 @@ export default function Features() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
             Powerful Features
           </h2>
           <p className="text-[var(--text-secondary)] max-w-lg mx-auto">

@@ -104,7 +104,7 @@ export default function FAQPage() {
     <main className="min-h-screen">
       <Header />
       <section className="pt-24 pb-20">
-        <div className="max-w-3xl mx-auto px-6">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -114,7 +114,7 @@ export default function FAQPage() {
           >
             <div className="inline-flex items-center gap-3 mb-6">
               <Image src="/logo.png" alt="ScreenForge" width={48} height={48} className="rounded-lg" />
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Frequently Asked Questions</h1>
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight">Frequently Asked Questions</h1>
             </div>
             <p className="text-lg text-[var(--text-secondary)] max-w-xl mx-auto">
               Everything you need to know about ScreenForge. Can't find what you're looking for?{' '}
@@ -148,7 +148,7 @@ export default function FAQPage() {
             <p className="text-[var(--text-secondary)] mb-6">
               Ready to start tracking your screen time?
             </p>
-            <a href="/#download" className="btn-primary inline-flex">
+            <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary inline-flex">
               Download ScreenForge
             </a>
           </motion.div>

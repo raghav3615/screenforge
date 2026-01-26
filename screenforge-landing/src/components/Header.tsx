@@ -9,7 +9,6 @@ import clsx from 'clsx'
 const navLinks = [
   { label: 'Features', href: '#features' },
   { label: 'FAQ', href: '/faq' },
-  { label: 'Download', href: '#download' },
 ]
 
 const GITHUB_REPO = 'raghav3615/screenforge'
@@ -27,7 +26,7 @@ export default function Header() {
       setScrolled(window.scrollY > 20)
     }
     window.addEventListener('scroll', handleScroll)
-    
+
     // Fetch GitHub stars
     fetch(`https://api.github.com/repos/${GITHUB_REPO}`)
       .then(res => res.json())
@@ -36,8 +35,8 @@ export default function Header() {
           setStars(data.stargazers_count)
         }
       })
-      .catch(() => {})
-    
+      .catch(() => { })
+
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -52,12 +51,12 @@ export default function Header() {
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className={clsx(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        scrolled 
-          ? 'bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--border)]' 
+        scrolled
+          ? 'bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--border)]'
           : 'bg-transparent'
       )}
     >
-      <nav className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <nav className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2.5">
           <Image
@@ -93,9 +92,9 @@ export default function Header() {
             className="github-stars hidden sm:flex"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/>
+              <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z" />
             </svg>
-            <span>{stars !== null ? stars : '–'}</span>
+            <span>{stars !== null ? stars : '–'}</span> stars on GitHub
           </a>
 
           {/* Theme Toggle */}
@@ -125,8 +124,21 @@ export default function Header() {
             </button>
           )}
 
+          {/* X (Twitter) Button */}
+          <a
+            href="https://x.com/raghav_dadhich"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors hidden sm:flex"
+            aria-label="X (Twitter)"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+          </a>
+
           {/* Download Button */}
-          <a href="#download" className="btn-primary hidden sm:flex">
+          <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary hidden sm:flex">
             Download
           </a>
 
@@ -174,7 +186,7 @@ export default function Header() {
                   {link.label}
                 </a>
               ))}
-              <a href="#download" className="btn-primary text-center mt-2">
+              <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary text-center mt-2">
                 Download
               </a>
             </div>
