@@ -27,7 +27,6 @@ export default function Header() {
     }
     window.addEventListener('scroll', handleScroll)
 
-    // Fetch GitHub stars
     fetch(`https://api.github.com/repos/${GITHUB_REPO}`)
       .then(res => res.json())
       .then(data => {
@@ -56,20 +55,19 @@ export default function Header() {
           : 'bg-transparent'
       )}
     >
-      <nav className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <a href="/" className="flex items-center gap-2.5">
+      <nav className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between" aria-label="Main navigation">
+        <a href="/" className="flex items-center gap-2.5" aria-label="ScreenForge Home">
           <Image
             src="/logo.png"
-            alt="ScreenForge"
+            alt="ScreenForge Logo"
             width={32}
             height={32}
             className="rounded-lg"
+            priority
           />
           <span className="text-base font-semibold tracking-tight">ScreenForge</span>
         </a>
 
-        {/* Center Nav */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <a
@@ -82,31 +80,29 @@ export default function Header() {
           ))}
         </div>
 
-        {/* Right Actions */}
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
-          {/* GitHub Stars */}
           <a
             href={`https://github.com/${GITHUB_REPO}`}
             target="_blank"
             rel="noopener noreferrer"
             className="github-stars hidden sm:flex"
+            aria-label={`${stars ?? 0} stars on GitHub`}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z" />
             </svg>
             <span>{stars !== null ? stars : '–'}</span>
             <span className="hidden lg:inline">stars on Github</span>
           </a>
 
-          {/* Theme Toggle */}
           {mounted && (
             <button
               onClick={toggleTheme}
               className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors"
-              aria-label="Toggle theme"
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
             >
               {theme === 'dark' ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="5" />
                   <line x1="12" y1="1" x2="12" y2="3" />
                   <line x1="12" y1="21" x2="12" y2="23" />
@@ -118,38 +114,36 @@ export default function Header() {
                   <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                 </svg>
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                 </svg>
               )}
             </button>
           )}
 
-          {/* X (Twitter) Button */}
           <a
             href="https://x.com/raghav_dadhich"
             target="_blank"
             rel="noopener noreferrer"
             className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors hidden md:flex"
-            aria-label="X (Twitter)"
+            aria-label="Follow on X (Twitter)"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
             </svg>
           </a>
 
-          {/* Download Button */}
           <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary hidden md:flex text-sm px-4 py-2">
             Download
           </a>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors"
-            aria-label="Toggle menu"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               {mobileMenuOpen ? (
                 <>
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -167,7 +161,6 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
