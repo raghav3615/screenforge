@@ -12,7 +12,8 @@ import {
 import { Doughnut, Line } from 'react-chartjs-2'
 import type { UsageSnapshot } from '../services/usageService'
 import type { ThemeName } from '../types/models'
-import { formatMinutes, getDailyTotals, getCategoryTotals, getAppTotals, calculateFocusScore, getTodayEntries } from '../utils/analytics'
+import { useI18n } from '../i18n/I18nProvider'
+import { getDailyTotals, getCategoryTotals, getAppTotals, calculateFocusScore, getTodayEntries } from '../utils/analytics'
 import './Insights.css'
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
@@ -23,6 +24,7 @@ interface InsightsProps {
 }
 
 const Insights = ({ snapshot, theme }: InsightsProps) => {
+  const { t, formatMinutes, formatDate, translateCategory } = useI18n()
   const {
     dailyTotals,
     categoryTotals,
@@ -40,9 +42,9 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
         appTotals: [],
         focusScore: 0,
         todayAppsCount: 0,
-        topAppName: 'N/A',
-        topCategoryName: 'N/A',
-        peakDayLabel: 'N/A',
+        topAppName: t('common.notAvailable'),
+        topCategoryName: t('common.notAvailable'),
+        peakDayLabel: t('common.notAvailable'),
       }
     }
 
@@ -67,11 +69,11 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
       appTotals: apps,
       focusScore: score,
       todayAppsCount: todayAppTotals.length,
-      topAppName: topApp?.app.name ?? 'N/A',
-      topCategoryName: topCategory?.category ?? 'N/A',
-      peakDayLabel: peakDay ? new Date(peakDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A',
+      topAppName: topApp?.app.name ?? t('common.notAvailable'),
+      topCategoryName: topCategory ? translateCategory(topCategory.category) : t('common.notAvailable'),
+      peakDayLabel: peakDay ? formatDate(`${peakDay.date}T00:00:00`, { month: 'short', day: 'numeric' }) : t('common.notAvailable'),
     }
-  }, [snapshot])
+  }, [snapshot, formatDate, t, translateCategory])
 
   const style = typeof window !== 'undefined' ? getComputedStyle(document.documentElement) : null
   const axisColor = style?.getPropertyValue('--text-muted').trim() || 'rgba(255,255,255,0.6)'
@@ -84,10 +86,10 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
   const weeklyData = useMemo(() => {
     const last7 = dailyTotals.slice(-7)
     return {
-      labels: last7.map((d) => new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })),
+      labels: last7.map((d) => formatDate(`${d.date}T00:00:00`, { weekday: 'short' })),
       datasets: [
         {
-          label: 'Minutes',
+          label: t('insights.charts.minutesDataset'),
           data: last7.map((d) => d.minutes),
           borderColor: accentColor,
           backgroundColor: 'transparent',
@@ -96,10 +98,10 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
         },
       ],
     }
-  }, [dailyTotals, accentColor])
+  }, [dailyTotals, accentColor, formatDate, t])
 
   const categoryDonutData = useMemo(() => ({
-    labels: categoryTotals.map((c) => c.category),
+    labels: categoryTotals.map((c) => translateCategory(c.category)),
     datasets: [
       {
         data: categoryTotals.map((c) => c.minutes),
@@ -107,7 +109,7 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
         borderWidth: 0,
       },
     ],
-  }), [categoryTotals])
+  }), [categoryTotals, translateCategory])
 
   const totalTime = dailyTotals.reduce((s, d) => s + d.minutes, 0)
   const avgDaily = dailyTotals.length > 0 ? Math.round(totalTime / dailyTotals.length) : 0
@@ -116,31 +118,31 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
     <>
       <header className="topbar">
         <div>
-          <div className="topbar__title">Insights</div>
-          <div className="topbar__subtitle">Deep dive into your screen time patterns</div>
+          <div className="topbar__title">{t('insights.title')}</div>
+          <div className="topbar__subtitle">{t('insights.subtitle')}</div>
         </div>
       </header>
 
       <section className="insights-hero">
         <div className="insight-hero-card">
-          <div className="insight-hero-card__label">Focus Score</div>
+          <div className="insight-hero-card__label">{t('insights.cards.focusScore')}</div>
           <div className="insight-hero-card__value">{focusScore}</div>
-          <div className="insight-hero-card__sub">Based on productive app usage</div>
+          <div className="insight-hero-card__sub">{t('insights.cards.focusScoreSub')}</div>
         </div>
         <div className="insight-hero-card">
-          <div className="insight-hero-card__label">Apps Used</div>
+          <div className="insight-hero-card__label">{t('insights.cards.appsUsed')}</div>
           <div className="insight-hero-card__value">{todayAppsCount}</div>
-          <div className="insight-hero-card__sub">Today</div>
+          <div className="insight-hero-card__sub">{t('common.today')}</div>
         </div>
         <div className="insight-hero-card">
-          <div className="insight-hero-card__label">Top app</div>
+          <div className="insight-hero-card__label">{t('insights.cards.topApp')}</div>
           <div className="insight-hero-card__value insight-hero-card__value--small">{topAppName}</div>
-          <div className="insight-hero-card__sub">Most used by minutes</div>
+          <div className="insight-hero-card__sub">{t('insights.cards.topAppSub')}</div>
         </div>
         <div className="insight-hero-card">
-          <div className="insight-hero-card__label">Total tracked</div>
+          <div className="insight-hero-card__label">{t('insights.cards.totalTracked')}</div>
           <div className="insight-hero-card__value insight-hero-card__value--small">{formatMinutes(totalTime)}</div>
-          <div className="insight-hero-card__sub">All time screen time</div>
+          <div className="insight-hero-card__sub">{t('insights.cards.totalTrackedSub')}</div>
         </div>
       </section>
 
@@ -148,8 +150,8 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
         <div className="card chart-card">
           <div className="card__header">
             <div>
-              <h3>Weekly trend</h3>
-              <p>Screen time over the last 7 days</p>
+              <h3>{t('insights.charts.weeklyTrendTitle')}</h3>
+              <p>{t('insights.charts.weeklyTrendSubtitle')}</p>
             </div>
           </div>
           {dailyTotals.length > 0 ? (
@@ -165,15 +167,15 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
               }}
             />
           ) : (
-            <div className="chart-empty">Start using apps to see trends</div>
+            <div className="chart-empty">{t('insights.charts.weeklyTrendEmpty')}</div>
           )}
         </div>
 
         <div className="card chart-card">
           <div className="card__header">
             <div>
-              <h3>Category breakdown</h3>
-              <p>How you spend your screen time</p>
+              <h3>{t('insights.charts.categoryBreakdownTitle')}</h3>
+              <p>{t('insights.charts.categoryBreakdownSubtitle')}</p>
             </div>
           </div>
           {categoryTotals.length > 0 ? (
@@ -190,33 +192,33 @@ const Insights = ({ snapshot, theme }: InsightsProps) => {
               />
             </div>
           ) : (
-            <div className="chart-empty">No category data yet</div>
+            <div className="chart-empty">{t('insights.charts.categoryBreakdownEmpty')}</div>
           )}
         </div>
       </section>
 
       <section className="insights-stats">
         <div className="card">
-          <h3>Quick stats</h3>
+          <h3>{t('insights.quickStats.title')}</h3>
           <div className="quick-stats">
             <div className="quick-stat">
-              <span className="quick-stat__label">Days tracked</span>
+              <span className="quick-stat__label">{t('insights.quickStats.daysTracked')}</span>
               <span className="quick-stat__value">{dailyTotals.length}</span>
             </div>
             <div className="quick-stat">
-              <span className="quick-stat__label">Apps used</span>
+              <span className="quick-stat__label">{t('insights.quickStats.appsUsed')}</span>
               <span className="quick-stat__value">{appTotals.length}</span>
             </div>
             <div className="quick-stat">
-              <span className="quick-stat__label">Daily average</span>
+              <span className="quick-stat__label">{t('insights.quickStats.dailyAverage')}</span>
               <span className="quick-stat__value">{formatMinutes(avgDaily)}</span>
             </div>
             <div className="quick-stat">
-              <span className="quick-stat__label">Top category</span>
+              <span className="quick-stat__label">{t('insights.quickStats.topCategory')}</span>
               <span className="quick-stat__value">{topCategoryName}</span>
             </div>
             <div className="quick-stat">
-              <span className="quick-stat__label">Peak day</span>
+              <span className="quick-stat__label">{t('insights.quickStats.peakDay')}</span>
               <span className="quick-stat__value">{peakDayLabel}</span>
             </div>
           </div>

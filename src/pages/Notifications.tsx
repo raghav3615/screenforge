@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { UsageSnapshot } from '../services/usageService'
 import type { NotificationSummary as NotifSummaryType } from '../types/models'
+import { useI18n } from '../i18n/I18nProvider'
 import './Notifications.css'
 
 interface NotificationsProps {
@@ -9,6 +10,7 @@ interface NotificationsProps {
 }
 
 const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) => {
+  const { t, translateCategory } = useI18n()
   const { appNotifications, totalNotifications, avgPerApp, topSender, statusInfo } = useMemo(() => {
     if (!snapshot || !notificationSummary) {
       return { 
@@ -16,7 +18,7 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
         totalNotifications: 0, 
         avgPerApp: 0, 
         topSender: null,
-        statusInfo: { status: 'loading' as const, message: 'Loading...' }
+        statusInfo: { status: 'loading' as const, message: t('common.loading') }
       }
     }
 
@@ -32,7 +34,7 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
 
     // For entries without app info, create a placeholder
     const processedEntries = entries.map(e => ({
-      app: e.app ?? { id: e.appId, name: e.appId === 'other' ? 'Other Apps' : e.appId, category: 'Unknown', color: '#6b7280' },
+      app: e.app ?? { id: e.appId, name: e.appId === 'other' ? t('notifications.breakdown.otherApps') : e.appId, category: 'Unknown', color: '#6b7280' },
       count: e.count,
     }))
 
@@ -44,12 +46,14 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
     if (notificationSummary.status === 'no-logs') {
       statusInfo = {
         status: 'no-logs',
-        message: 'Windows notification logs are disabled. Enable them in Event Viewer or run as Administrator.',
+        message: t('notifications.status.disabledMessage'),
       }
     } else if (notificationSummary.status === 'error') {
       statusInfo = {
         status: 'error',
-        message: notificationSummary.errorMessage ?? 'Failed to read notification logs.',
+        message: notificationSummary.errorMessage
+          ? t('notifications.status.errorWithDetails', { detail: notificationSummary.errorMessage })
+          : t('notifications.status.errorMessage'),
       }
     } else {
       statusInfo = { status: 'ok', message: '' }
@@ -62,7 +66,7 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
       topSender: top,
       statusInfo,
     }
-  }, [snapshot, notificationSummary])
+  }, [snapshot, notificationSummary, t])
 
   const maxCount = appNotifications.length > 0 ? appNotifications[0].count : 1
 
@@ -70,8 +74,8 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
     <>
       <header className="topbar">
         <div>
-          <div className="topbar__title">Notifications</div>
-          <div className="topbar__subtitle">Track notification activity from your apps today</div>
+          <div className="topbar__title">{t('notifications.title')}</div>
+          <div className="topbar__subtitle">{t('notifications.subtitle')}</div>
         </div>
       </header>
 
@@ -80,7 +84,7 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
         <div className={`notif-status-banner notif-status-banner--${statusInfo.status}`}>
           <div className="notif-status-banner__content">
             <span className="notif-status-banner__title">
-              {statusInfo.status === 'no-logs' ? 'Notification Logs Disabled' : 'Error Reading Logs'}
+              {statusInfo.status === 'no-logs' ? t('notifications.status.disabledTitle') : t('notifications.status.errorTitle')}
             </span>
             <span className="notif-status-banner__message">{statusInfo.message}</span>
           </div>
@@ -91,24 +95,24 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
       <section className="notif-stats-row">
         <div className="notif-stat-block">
           <span className="notif-stat-block__value">{totalNotifications}</span>
-          <span className="notif-stat-block__label">Total Today</span>
+          <span className="notif-stat-block__label">{t('notifications.stats.totalToday')}</span>
         </div>
         <div className="notif-stat-divider" />
         <div className="notif-stat-block">
           <span className="notif-stat-block__value">{appNotifications.length}</span>
-          <span className="notif-stat-block__label">Apps</span>
+          <span className="notif-stat-block__label">{t('notifications.stats.apps')}</span>
         </div>
         <div className="notif-stat-divider" />
         <div className="notif-stat-block">
           <span className="notif-stat-block__value">{avgPerApp}</span>
-          <span className="notif-stat-block__label">Avg per App</span>
+          <span className="notif-stat-block__label">{t('notifications.stats.avgPerApp')}</span>
         </div>
         <div className="notif-stat-divider" />
         <div className="notif-stat-block">
           <span className="notif-stat-block__value notif-stat-block__value--highlight">
-            {topSender?.app.name ?? 'None'}
+            {topSender?.app.name ?? t('common.none')}
           </span>
-          <span className="notif-stat-block__label">Top Sender</span>
+          <span className="notif-stat-block__label">{t('notifications.stats.topSender')}</span>
         </div>
       </section>
 
@@ -116,28 +120,28 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
       <section className="card notif-breakdown-section">
         <div className="notif-breakdown-header">
           <div>
-            <h3>Breakdown by App</h3>
-            <p>Notifications received today per application</p>
+            <h3>{t('notifications.breakdown.title')}</h3>
+            <p>{t('notifications.breakdown.subtitle')}</p>
           </div>
           {appNotifications.length > 0 && (
-            <span className="notif-count-badge">{appNotifications.length} apps</span>
+            <span className="notif-count-badge">{t('notifications.breakdown.countBadge', { count: appNotifications.length })}</span>
           )}
         </div>
         
         {appNotifications.length === 0 ? (
           <div className="notif-empty-state">
-            <div className="notif-empty-state__title">No notifications tracked yet</div>
+            <div className="notif-empty-state__title">{t('notifications.breakdown.emptyTitle')}</div>
             <div className="notif-empty-state__subtitle">
               {statusInfo.status === 'ok' 
-                ? 'Notifications from your apps will appear here as they come in.'
-                : 'Fix the issue above to start tracking notifications.'}
+                ? t('notifications.breakdown.emptySubtitle')
+                : t('notifications.breakdown.emptyActionSubtitle')}
             </div>
           </div>
         ) : (
           <div className="notif-app-list">
             <div className="notif-app-list__header">
-              <span>Application</span>
-              <span>Count</span>
+              <span>{t('notifications.breakdown.app')}</span>
+              <span>{t('notifications.breakdown.count')}</span>
             </div>
             {appNotifications.map(({ app, count }) => {
               const percentage = Math.round((count / totalNotifications) * 100)
@@ -147,7 +151,7 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
                     <div className="notif-app-row__indicator" style={{ background: app.color }} />
                     <div className="notif-app-row__details">
                       <span className="notif-app-row__name">{app.name}</span>
-                      <span className="notif-app-row__meta">{app.category}</span>
+                      <span className="notif-app-row__meta">{translateCategory(app.category)}</span>
                     </div>
                   </div>
                   <div className="notif-app-row__progress">
@@ -172,34 +176,31 @@ const Notifications = ({ snapshot, notificationSummary }: NotificationsProps) =>
 
       {/* Tips Section */}
       <section className="card notif-tips-section">
-        <h3>Reduce Distractions</h3>
-        <p>Tips for managing notification overload</p>
+        <h3>{t('notifications.tips.title')}</h3>
+        <p>{t('notifications.tips.subtitle')}</p>
         <div className="notif-tips-list">
           <div className="notif-tip-row">
             <div className="notif-tip-row__header">
-              <span className="notif-tip-row__title">Enable Focus Assist</span>
+              <span className="notif-tip-row__title">{t('notifications.tips.focusAssistTitle')}</span>
             </div>
             <p className="notif-tip-row__desc">
-              Use Windows Focus Assist to silence notifications during work hours. 
-              Access it from the Action Center or Settings.
+              {t('notifications.tips.focusAssistDesc')}
             </p>
           </div>
           <div className="notif-tip-row">
             <div className="notif-tip-row__header">
-              <span className="notif-tip-row__title">Configure App Notifications</span>
+              <span className="notif-tip-row__title">{t('notifications.tips.appNotificationsTitle')}</span>
             </div>
             <p className="notif-tip-row__desc">
-              Go to Windows Settings &gt; System &gt; Notifications to customize 
-              which apps can send you notifications.
+              {t('notifications.tips.appNotificationsDesc')}
             </p>
           </div>
           <div className="notif-tip-row">
             <div className="notif-tip-row__header">
-              <span className="notif-tip-row__title">Set Time Limits</span>
+              <span className="notif-tip-row__title">{t('notifications.tips.timeLimitsTitle')}</span>
             </div>
             <p className="notif-tip-row__desc">
-              Use the Apps page to set daily time limits for distracting applications. 
-              You will receive a notification when limits are exceeded.
+              {t('notifications.tips.timeLimitsDesc')}
             </p>
           </div>
         </div>
