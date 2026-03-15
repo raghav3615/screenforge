@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { IpcRendererEvent } from 'electron'
 
 // Time limit interface
 interface AppTimeLimit {
@@ -134,7 +135,7 @@ const api = {
   },
   // Event listeners
   onTimeLimitExceeded: (callback: (data: { appId: string; appName: string; usedMinutes: number; limitMinutes: number }) => void) => {
-    const handler = (_event: electron.IpcRendererEvent, data: { appId: string; appName: string; usedMinutes: number; limitMinutes: number }) => {
+    const handler = (_event: IpcRendererEvent, data: { appId: string; appName: string; usedMinutes: number; limitMinutes: number }) => {
       callback(data)
     }
     ipcRenderer.on('time-limit-exceeded', handler)

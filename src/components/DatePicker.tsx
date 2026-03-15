@@ -45,8 +45,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
     }
   }, [availableDates])
 
-  // Check if a date has data
-  const hasData = (dateStr: string) => availableDates.includes(dateStr)
+  const availableDateSet = useMemo(() => new Set(availableDates), [availableDates])
 
   // Get days for the current view month
   const calendarDays = useMemo(() => {
@@ -84,7 +83,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
         date: d,
         dateStr,
         isCurrentMonth: d.getMonth() === month,
-        hasData: hasData(dateStr),
+        hasData: availableDateSet.has(dateStr),
         isToday: dateStr === today,
         isSelected: dateStr === selectedDate,
         isFuture: d > todayDate,
@@ -92,7 +91,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
     }
 
     return days
-  }, [viewMonth, availableDates, selectedDate])
+  }, [availableDateSet, selectedDate, viewMonth])
 
   const goToPrevMonth = () => {
     setViewMonth(prev => {

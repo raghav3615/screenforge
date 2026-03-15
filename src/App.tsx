@@ -44,8 +44,6 @@ const App = () => {
   }, [theme])
 
   useEffect(() => {
-    let interval: number | undefined
-
     const load = async () => {
       const [usageSnapshot, suggestionFeed, notificationFeed, settings] = await Promise.all([
         fetchUsageSnapshot(),
@@ -61,15 +59,15 @@ const App = () => {
     }
 
     load()
-    interval = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       fetchUsageSnapshot().then(setSnapshot)
       fetchNotificationSummary().then(setNotificationSummary)
     }, 5000)
 
     return () => {
-      if (interval) window.clearInterval(interval)
+      window.clearInterval(intervalId)
     }
-  }, [])
+  }, [setLocale])
 
   // Calculate focus score using shared utility
   const focusScore = snapshot 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ThemeName } from '../types/models'
 import {
@@ -47,6 +47,9 @@ const getInitialLocale = (): LocaleCode => {
 
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
   const [locale, setLocaleState] = useState<LocaleCode>(getInitialLocale)
+  const setLocale = useCallback((nextLocale: LocaleCode) => {
+    setLocaleState(normalizeLocale(nextLocale))
+  }, [])
 
   useEffect(() => {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
@@ -54,7 +57,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo<I18nContextValue>(() => ({
     locale,
-    setLocale: (nextLocale) => setLocaleState(normalizeLocale(nextLocale)),
+    setLocale,
     t: (key, params) => translate(locale, key, params),
     formatDate: (value, options) => formatDate(locale, value, options),
     formatDateLabel: (dateString) => formatRelativeDateLabel(locale, dateString),
@@ -65,7 +68,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     translateThemeName: (theme) => translateThemeName(locale, theme),
     translateThemeDescription: (theme) => translateThemeDescription(locale, theme),
     localeOptions: getLocaleOptions(),
-  }), [locale])
+  }), [locale, setLocale])
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
 }

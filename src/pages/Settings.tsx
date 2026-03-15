@@ -37,7 +37,7 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
       }
     }
     loadSettings()
-  }, [])
+  }, [setLocale])
 
   const handleSettingChange = async (key: keyof AppSettings, value: boolean) => {
     try {

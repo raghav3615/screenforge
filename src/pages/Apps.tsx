@@ -45,11 +45,11 @@ const Apps = ({ snapshot }: AppsProps) => {
     return dates.slice(0, 14) // Last 14 days max
   }, [snapshot])
 
-  // Ensure selected date is valid
-  useEffect(() => {
-    if (!availableDates.includes(selectedDate)) {
-      setSelectedDate(availableDates[0] || getTodayDateString())
+  const activeSelectedDate = useMemo(() => {
+    if (availableDates.includes(selectedDate)) {
+      return selectedDate
     }
+    return availableDates[0] || getTodayDateString()
   }, [availableDates, selectedDate])
 
   const runningNow = useMemo(() => {
@@ -73,7 +73,7 @@ const Apps = ({ snapshot }: AppsProps) => {
     }
 
     // Filter entries for selected date
-    const dateEntries = getEntriesForDate(snapshot.usageEntries, selectedDate)
+    const dateEntries = getEntriesForDate(snapshot.usageEntries, activeSelectedDate)
     const appTotals = getAppTotals(dateEntries, snapshot.apps)
     const catTotals = getCategoryTotals(dateEntries, snapshot.apps)
     const totalSec = appTotals.reduce((s, a) => s + a.seconds, 0)
@@ -110,7 +110,7 @@ const Apps = ({ snapshot }: AppsProps) => {
       categoryTotals: catTotals,
       todayUsageByApp: todayUsage,
     }
-  }, [snapshot, sortBy, search, selectedDate, translateCategory])
+  }, [activeSelectedDate, snapshot, sortBy, search, translateCategory])
 
   const handleSetLimit = async (appId: string) => {
     const minutes = parseInt(limitInputValue, 10)
@@ -139,7 +139,7 @@ const Apps = ({ snapshot }: AppsProps) => {
     return timeLimits.find((l) => l.appId === appId)
   }
 
-  const isToday = selectedDate === getTodayDateString()
+  const isToday = activeSelectedDate === getTodayDateString()
 
   return (
     <>
@@ -147,7 +147,7 @@ const Apps = ({ snapshot }: AppsProps) => {
         <div>
           <div className="topbar__title">{t('apps.title')}</div>
           <div className="topbar__subtitle">
-            {t('apps.subtitle', { date: formatDateLabel(selectedDate) })}
+            {t('apps.subtitle', { date: formatDateLabel(activeSelectedDate) })}
           </div>
         </div>
       </header>
@@ -157,7 +157,7 @@ const Apps = ({ snapshot }: AppsProps) => {
         <div className="apps-date-selector">
           <span className="apps-date-label">{t('apps.dateView')}</span>
           <DatePicker
-            selectedDate={selectedDate}
+            selectedDate={activeSelectedDate}
             availableDates={availableDates}
             onChange={setSelectedDate}
           />
@@ -304,7 +304,7 @@ const Apps = ({ snapshot }: AppsProps) => {
           <div className="apps-empty">
             {search 
               ? t('apps.empty.search')
-              : t('apps.empty.date', { date: formatDateLabel(selectedDate) })}
+              : t('apps.empty.date', { date: formatDateLabel(activeSelectedDate) })}
           </div>
         ) : (
           appList.map(({ app, seconds }) => {

@@ -261,7 +261,7 @@ if ($unique.Count -eq 0) {
 }
 `;
   try {
-    const { stdout, stderr } = await execFileAsync("powershell", [
+    const { stdout } = await execFileAsync("powershell", [
       "-NoProfile",
       "-ExecutionPolicy",
       "Bypass",
@@ -288,7 +288,7 @@ if ($unique.Count -eq 0) {
   }
 };
 var createNotificationTracker = () => {
-  let persistedData = loadPersistedData();
+  const persistedData = loadPersistedData();
   let lastError;
   let saveTimeout = null;
   const scheduleSave = () => {
