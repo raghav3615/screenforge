@@ -1,19 +1,17 @@
-import * as electron from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, Notification, ipcMain } from 'electron'
 import path from 'node:path'
 import * as fs from 'node:fs'
 import { createNotificationTracker } from './notifications'
 import { createUsageTracker } from './telemetry'
-
-const { app, BrowserWindow, Tray, Menu, nativeImage, Notification } = electron
-const { ipcMain } = electron
+import { defaultLocale, normalizeLocale, translate, type LocaleCode } from '../src/i18n/core'
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
 
 const usageTracker = createUsageTracker()
 const notificationTracker = createNotificationTracker()
 
-let mainWindow: electron.BrowserWindow | null = null
-let tray: electron.Tray | null = null
+let mainWindow: BrowserWindow | null = null
+let tray: Tray | null = null
 let isQuitting = false
 
 const ZOOM_STEP = 0.1
@@ -57,6 +55,7 @@ interface AppSettings {
   startWithWindows: boolean
   timeLimits: AppTimeLimit[]
   timeLimitNotificationsEnabled: boolean
+  language: LocaleCode
 }
 
 // Track which alerts have been shown today to avoid spam
@@ -71,11 +70,15 @@ let settings: AppSettings = {
   startWithWindows: false,
   timeLimits: [],
   timeLimitNotificationsEnabled: true,
+  language: defaultLocale,
 }
 
 let shownAlerts: TimeLimitAlert[] = []
 
 // Get today's date in Windows local timezone
+const mt = (key: string, params?: Record<string, string | number>) =>
+  translate(settings.language, key, params)
+
 const getTodayDateString = (): string => {
   const now = new Date()
   const year = now.getFullYear()
@@ -105,6 +108,7 @@ const loadSettings = () => {
         startWithWindows: loaded.startWithWindows ?? false,
         timeLimits: loaded.timeLimits ?? [],
         timeLimitNotificationsEnabled: loaded.timeLimitNotificationsEnabled ?? true,
+        language: normalizeLocale(loaded.language),
       }
     }
   } catch {
@@ -188,8 +192,12 @@ const checkTimeLimits = () => {
 
         // Show notification
         const notification = new Notification({
-          title: 'Time Limit Reached',
-          body: `You've used ${appName} for ${usedMinutes} minutes today. Your limit is ${limit.limitMinutes} minutes.`,
+          title: mt('native.timeLimitReachedTitle'),
+          body: mt('native.timeLimitReachedBody', {
+            appName,
+            usedMinutes,
+            limitMinutes: limit.limitMinutes,
+          }),
           icon: undefined,
           silent: false,
         })
@@ -226,8 +234,8 @@ const generateSuggestions = () => {
   if (snapshot.usageEntries.length === 0) {
     suggestions.push({
       id: 'welcome',
-      title: 'Welcome to ScreenForge!',
-      detail: 'Keep the app running to track your screen time automatically.',
+      title: mt('suggestions.welcome.title'),
+      detail: mt('suggestions.welcome.detail'),
     })
     return suggestions
   }
@@ -250,8 +258,8 @@ const generateSuggestions = () => {
   if (entertainmentMinutes > 0 && entertainmentMinutes / totalMinutes > 0.3) {
     suggestions.push({
       id: 'entertainment',
-      title: 'High entertainment usage',
-      detail: 'Consider setting time limits for entertainment apps to boost productivity.',
+      title: mt('suggestions.entertainment.title'),
+      detail: mt('suggestions.entertainment.detail'),
     })
   }
 
@@ -260,8 +268,8 @@ const generateSuggestions = () => {
   if (socialMinutes > 0 && socialMinutes / totalMinutes > 0.2) {
     suggestions.push({
       id: 'social',
-      title: 'Social apps taking over',
-      detail: 'Try scheduling specific times for checking social media.',
+      title: mt('suggestions.social.title'),
+      detail: mt('suggestions.social.detail'),
     })
   }
 
@@ -270,8 +278,8 @@ const generateSuggestions = () => {
   if (productiveMinutes > 0 && productiveMinutes / totalMinutes > 0.5) {
     suggestions.push({
       id: 'productive',
-      title: 'Great focus!',
-      detail: 'You\'re spending most of your time on productive tasks. Keep it up!',
+      title: mt('suggestions.productive.title'),
+      detail: mt('suggestions.productive.detail'),
     })
   }
 
@@ -279,18 +287,44 @@ const generateSuggestions = () => {
   if (suggestions.length === 0) {
     suggestions.push({
       id: 'balance',
-      title: 'Balanced usage',
-      detail: 'Your screen time is well distributed across different activities.',
+      title: mt('suggestions.balance.title'),
+      detail: mt('suggestions.balance.detail'),
     })
   }
 
   suggestions.push({
     id: 'breaks',
-    title: 'Remember to take breaks',
-    detail: 'Use the 20-20-20 rule: every 20 minutes, look at something 20 feet away for 20 seconds.',
+    title: mt('suggestions.breaks.title'),
+    detail: mt('suggestions.breaks.detail'),
   })
 
   return suggestions
+}
+
+const buildTrayMenu = () => Menu.buildFromTemplate([
+  {
+    label: mt('native.trayShow'),
+    click: () => {
+      if (mainWindow) {
+        mainWindow.show()
+        mainWindow.focus()
+      }
+    },
+  },
+  { type: 'separator' },
+  {
+    label: mt('native.trayQuit'),
+    click: () => {
+      isQuitting = true
+      app.quit()
+    },
+  },
+])
+
+const updateTrayMenu = () => {
+  if (!tray) return
+  tray.setToolTip(mt('native.trayTooltip'))
+  tray.setContextMenu(buildTrayMenu())
 }
 
 const createTray = () => {
@@ -346,29 +380,7 @@ const createTray = () => {
   const trayIcon = nativeImage.createFromBuffer(canvas, { width: size, height: size })
   
   tray = new Tray(trayIcon)
-  tray.setToolTip('ScreenForge - Screen Time Tracker')
-  
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Show ScreenForge',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show()
-          mainWindow.focus()
-        }
-      },
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit',
-      click: () => {
-        isQuitting = true
-        app.quit()
-      },
-    },
-  ])
-  
-  tray.setContextMenu(contextMenu)
+  updateTrayMenu()
   
   // Double-click to show window
   tray.on('double-click', () => {
@@ -563,6 +575,10 @@ app.whenReady().then(() => {
     }
     if (typeof newSettings.timeLimitNotificationsEnabled === 'boolean') {
       settings.timeLimitNotificationsEnabled = newSettings.timeLimitNotificationsEnabled
+    }
+    if (newSettings.language) {
+      settings.language = normalizeLocale(newSettings.language)
+      updateTrayMenu()
     }
     saveSettings()
     return settings

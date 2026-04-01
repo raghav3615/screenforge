@@ -1,13 +1,12 @@
 import { useMemo, useState, useEffect } from 'react'
 import type { UsageSnapshot } from '../services/usageService'
 import type { AppInfo, AppTimeLimit } from '../types/models'
+import { useI18n } from '../i18n/I18nProvider'
 import { 
-  formatSeconds, 
   getAppTotals, 
   getEntriesForDate, 
   getAvailableDates, 
   getTodayDateString,
-  formatDateLabel,
   getCategoryTotals,
 } from '../utils/analytics'
 import { fetchTimeLimits, addTimeLimit, removeTimeLimit } from '../services/usageService'
@@ -21,6 +20,7 @@ interface AppsProps {
 type SortBy = 'time' | 'name' | 'category'
 
 const Apps = ({ snapshot }: AppsProps) => {
+  const { t, formatSeconds, formatDateLabel, translateCategory } = useI18n()
   const [sortBy, setSortBy] = useState<SortBy>('time')
   const [search, setSearch] = useState('')
   const [timeLimits, setTimeLimits] = useState<AppTimeLimit[]>([])
@@ -45,11 +45,11 @@ const Apps = ({ snapshot }: AppsProps) => {
     return dates.slice(0, 14) // Last 14 days max
   }, [snapshot])
 
-  // Ensure selected date is valid
-  useEffect(() => {
-    if (!availableDates.includes(selectedDate)) {
-      setSelectedDate(availableDates[0] || getTodayDateString())
+  const activeSelectedDate = useMemo(() => {
+    if (availableDates.includes(selectedDate)) {
+      return selectedDate
     }
+    return availableDates[0] || getTodayDateString()
   }, [availableDates, selectedDate])
 
   const runningNow = useMemo(() => {
@@ -73,7 +73,7 @@ const Apps = ({ snapshot }: AppsProps) => {
     }
 
     // Filter entries for selected date
-    const dateEntries = getEntriesForDate(snapshot.usageEntries, selectedDate)
+    const dateEntries = getEntriesForDate(snapshot.usageEntries, activeSelectedDate)
     const appTotals = getAppTotals(dateEntries, snapshot.apps)
     const catTotals = getCategoryTotals(dateEntries, snapshot.apps)
     const totalSec = appTotals.reduce((s, a) => s + a.seconds, 0)
@@ -97,7 +97,10 @@ const Apps = ({ snapshot }: AppsProps) => {
     if (search) {
       const q = search.toLowerCase()
       sorted = sorted.filter(
-        (a) => a.app.name.toLowerCase().includes(q) || a.app.category.toLowerCase().includes(q)
+        (a) =>
+          a.app.name.toLowerCase().includes(q) ||
+          a.app.category.toLowerCase().includes(q) ||
+          translateCategory(a.app.category).toLowerCase().includes(q)
       )
     }
 
@@ -107,7 +110,7 @@ const Apps = ({ snapshot }: AppsProps) => {
       categoryTotals: catTotals,
       todayUsageByApp: todayUsage,
     }
-  }, [snapshot, sortBy, search, selectedDate])
+  }, [activeSelectedDate, snapshot, sortBy, search, translateCategory])
 
   const handleSetLimit = async (appId: string) => {
     const minutes = parseInt(limitInputValue, 10)
@@ -136,15 +139,15 @@ const Apps = ({ snapshot }: AppsProps) => {
     return timeLimits.find((l) => l.appId === appId)
   }
 
-  const isToday = selectedDate === getTodayDateString()
+  const isToday = activeSelectedDate === getTodayDateString()
 
   return (
     <>
       <header className="topbar">
         <div>
-          <div className="topbar__title">Apps</div>
+          <div className="topbar__title">{t('apps.title')}</div>
           <div className="topbar__subtitle">
-            Screen time for {formatDateLabel(selectedDate)}
+            {t('apps.subtitle', { date: formatDateLabel(activeSelectedDate) })}
           </div>
         </div>
       </header>
@@ -152,9 +155,9 @@ const Apps = ({ snapshot }: AppsProps) => {
       {/* Date Selector & Stats */}
       <section className="apps-date-section">
         <div className="apps-date-selector">
-          <span className="apps-date-label">View:</span>
+          <span className="apps-date-label">{t('apps.dateView')}</span>
           <DatePicker
-            selectedDate={selectedDate}
+            selectedDate={activeSelectedDate}
             availableDates={availableDates}
             onChange={setSelectedDate}
           />
@@ -162,15 +165,15 @@ const Apps = ({ snapshot }: AppsProps) => {
         <div className="apps-date-stats">
           <div className="apps-date-stat">
             <span className="apps-date-stat__value">{formatSeconds(totalSeconds)}</span>
-            <span className="apps-date-stat__label">Total Time</span>
+            <span className="apps-date-stat__label">{t('apps.stats.totalTime')}</span>
           </div>
           <div className="apps-date-stat">
             <span className="apps-date-stat__value">{appList.length}</span>
-            <span className="apps-date-stat__label">Apps Used</span>
+            <span className="apps-date-stat__label">{t('apps.stats.appsUsed')}</span>
           </div>
           <div className="apps-date-stat">
-            <span className="apps-date-stat__value">{categoryTotals[0]?.category ?? 'None'}</span>
-            <span className="apps-date-stat__label">Top Category</span>
+            <span className="apps-date-stat__value">{categoryTotals[0] ? translateCategory(categoryTotals[0].category) : t('common.none')}</span>
+            <span className="apps-date-stat__label">{t('apps.stats.topCategory')}</span>
           </div>
         </div>
       </section>
@@ -179,11 +182,11 @@ const Apps = ({ snapshot }: AppsProps) => {
         <>
           <section className="running-now">
             <div className="running-now__header">
-              <div className="running-now__title">Open apps</div>
-              <div className="running-now__sub">Apps with visible windows</div>
+              <div className="running-now__title">{t('apps.openApps.title')}</div>
+              <div className="running-now__sub">{t('apps.openApps.subtitle')}</div>
             </div>
             {openApps.length === 0 ? (
-              <div className="running-now__empty">No apps with visible windows detected yet.</div>
+              <div className="running-now__empty">{t('apps.openApps.empty')}</div>
             ) : (
               <div className="running-now__list">
                 {openApps.map((p) => (
@@ -197,7 +200,7 @@ const Apps = ({ snapshot }: AppsProps) => {
                     />
                     <span className="running-now__name">{p.appInfo?.name ?? p.process}</span>
                     {p.appId === snapshot?.activeAppId && (
-                      <span className="running-now__focus">focused</span>
+                      <span className="running-now__focus">{t('common.focused')}</span>
                     )}
                   </div>
                 ))}
@@ -207,18 +210,18 @@ const Apps = ({ snapshot }: AppsProps) => {
 
           <section className="running-now running-now--background">
             <div className="running-now__header">
-              <div className="running-now__title">Background processes</div>
-              <div className="running-now__sub">Running without visible windows</div>
+              <div className="running-now__title">{t('apps.backgroundApps.title')}</div>
+              <div className="running-now__sub">{t('apps.backgroundApps.subtitle')}</div>
             </div>
             {backgroundApps.length === 0 ? (
-              <div className="running-now__empty">No background processes detected.</div>
+              <div className="running-now__empty">{t('apps.backgroundApps.empty')}</div>
             ) : (
               <div className="running-now__list">
                 {backgroundApps.slice(0, 16).map((p) => (
                   <div key={`${p.process}:${p.count}:${p.hasWindow}`} className="running-now__pill">
                     <span className="running-now__name">{p.appInfo?.name ?? p.process}</span>
                     <span className="running-now__meta">
-                      {p.count} {p.count === 1 ? 'process' : 'processes'}
+                      {t('apps.backgroundApps.processCount', { count: p.count })}
                     </span>
                   </div>
                 ))}
@@ -232,9 +235,9 @@ const Apps = ({ snapshot }: AppsProps) => {
       {timeLimits.length > 0 && isToday && (
         <section className="time-limits-summary">
           <div className="time-limits-summary__header">
-            <div className="time-limits-summary__title">Active Time Limits</div>
+            <div className="time-limits-summary__title">{t('apps.timeLimits.title')}</div>
             <div className="time-limits-summary__sub">
-              {timeLimits.length} app{timeLimits.length !== 1 ? 's' : ''} with limits
+              {t('apps.timeLimits.subtitle', { count: timeLimits.length })}
             </div>
           </div>
           <div className="time-limits-summary__list">
@@ -255,7 +258,7 @@ const Apps = ({ snapshot }: AppsProps) => {
                   />
                   <span className="time-limit-pill__name">{app?.name ?? limit.appId}</span>
                   <span className="time-limit-pill__usage">
-                    {usedMinutes}m / {limit.limitMinutes}m
+                    {t('apps.timeLimits.usage', { used: usedMinutes, limit: limit.limitMinutes })}
                   </span>
                   <div className="time-limit-pill__bar">
                     <div 
@@ -266,7 +269,7 @@ const Apps = ({ snapshot }: AppsProps) => {
                       }} 
                     />
                   </div>
-                  {isExceeded && <span className="time-limit-pill__exceeded">exceeded</span>}
+                  {isExceeded && <span className="time-limit-pill__exceeded">{t('apps.timeLimits.exceeded')}</span>}
                 </div>
               )
             })}
@@ -278,20 +281,20 @@ const Apps = ({ snapshot }: AppsProps) => {
         <input
           type="text"
           className="apps-search"
-          placeholder="Search apps..."
+          placeholder={t('apps.controls.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <div className="apps-sort">
-          <span>Sort by:</span>
+          <span>{t('apps.controls.sortBy')}</span>
           <button className={sortBy === 'time' ? 'active' : ''} onClick={() => setSortBy('time')}>
-            Time
+            {t('apps.controls.time')}
           </button>
           <button className={sortBy === 'name' ? 'active' : ''} onClick={() => setSortBy('name')}>
-            Name
+            {t('apps.controls.name')}
           </button>
           <button className={sortBy === 'category' ? 'active' : ''} onClick={() => setSortBy('category')}>
-            Category
+            {t('apps.controls.category')}
           </button>
         </div>
       </section>
@@ -300,8 +303,8 @@ const Apps = ({ snapshot }: AppsProps) => {
         {appList.length === 0 ? (
           <div className="apps-empty">
             {search 
-              ? 'No apps match your search' 
-              : `No apps tracked for ${formatDateLabel(selectedDate)}`}
+              ? t('apps.empty.search')
+              : t('apps.empty.date', { date: formatDateLabel(activeSelectedDate) })}
           </div>
         ) : (
           appList.map(({ app, seconds }) => {
@@ -369,6 +372,7 @@ const AppCard = ({
   onCancelEdit,
   onRemoveLimit,
 }: AppCardProps) => {
+  const { t, formatSeconds, translateCategory } = useI18n()
   const isExceeded = limit && todayMinutes >= limit.limitMinutes
   const limitProgress = limit ? Math.min(100, Math.round((todayMinutes / limit.limitMinutes) * 100)) : 0
 
@@ -378,12 +382,12 @@ const AppCard = ({
         <div className="app-card__dot" style={{ background: app.color }} />
         <div className="app-card__info">
           <div className="app-card__name">{app.name}</div>
-          <div className="app-card__category">{app.category}</div>
+          <div className="app-card__category">{translateCategory(app.category)}</div>
         </div>
       </div>
       <div className="app-card__main-stat">
         <span className="app-card__time">{formatSeconds(seconds)}</span>
-        <span className="app-card__percentage">{percentage}% of total</span>
+        <span className="app-card__percentage">{t('apps.cards.percentageOfTotal', { count: percentage })}</span>
       </div>
       <div className="app-card__bar">
         <div className="app-card__bar-fill" style={{ width: `${percentage}%`, background: app.color }} />
@@ -397,7 +401,7 @@ const AppCard = ({
               <input
                 type="number"
                 className="app-card__limit-input"
-                placeholder="Minutes"
+                placeholder={t('apps.timeLimits.minutesPlaceholder')}
                 value={limitInputValue}
                 onChange={(e) => onLimitInputChange(e.target.value)}
                 onKeyDown={(e) => {
@@ -407,16 +411,16 @@ const AppCard = ({
                 autoFocus
                 min={1}
               />
-              <span className="app-card__limit-unit">min/day</span>
-              <button className="app-card__limit-save" onClick={onSaveLimit}>Save</button>
-              <button className="app-card__limit-cancel" onClick={onCancelEdit}>Cancel</button>
+              <span className="app-card__limit-unit">{t('apps.timeLimits.perDayUnit')}</span>
+              <button className="app-card__limit-save" onClick={onSaveLimit}>{t('apps.timeLimits.save')}</button>
+              <button className="app-card__limit-cancel" onClick={onCancelEdit}>{t('apps.timeLimits.cancel')}</button>
             </div>
           ) : limit ? (
             <div className="app-card__limit-active">
               <div className="app-card__limit-info">
-                <span className="app-card__limit-label">Limit:</span>
+                <span className="app-card__limit-label">{t('apps.timeLimits.limit')}</span>
                 <span className={`app-card__limit-status ${isExceeded ? 'app-card__limit-status--exceeded' : ''}`}>
-                  {todayMinutes}m / {limit.limitMinutes}m
+                  {t('apps.timeLimits.usage', { used: todayMinutes, limit: limit.limitMinutes })}
                 </span>
               </div>
               <div className="app-card__limit-bar">
@@ -429,13 +433,13 @@ const AppCard = ({
                 />
               </div>
               <div className="app-card__limit-actions">
-                <button className="app-card__limit-edit-btn" onClick={onStartEditLimit}>Edit</button>
-                <button className="app-card__limit-remove-btn" onClick={onRemoveLimit}>Remove</button>
+                <button className="app-card__limit-edit-btn" onClick={onStartEditLimit}>{t('apps.timeLimits.edit')}</button>
+                <button className="app-card__limit-remove-btn" onClick={onRemoveLimit}>{t('apps.timeLimits.remove')}</button>
               </div>
             </div>
           ) : (
             <button className="app-card__set-limit-btn" onClick={onStartEditLimit}>
-              Set time limit
+              {t('apps.timeLimits.setLimit')}
             </button>
           )}
         </div>

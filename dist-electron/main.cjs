@@ -22,7 +22,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 
 // electron/main.ts
-var electron = __toESM(require("electron"), 1);
+var import_electron3 = require("electron");
 var import_node_path = __toESM(require("node:path"), 1);
 var fs3 = __toESM(require("node:fs"), 1);
 
@@ -261,7 +261,7 @@ if ($unique.Count -eq 0) {
 }
 `;
   try {
-    const { stdout, stderr } = await execFileAsync("powershell", [
+    const { stdout } = await execFileAsync("powershell", [
       "-NoProfile",
       "-ExecutionPolicy",
       "Bypass",
@@ -288,7 +288,7 @@ if ($unique.Count -eq 0) {
   }
 };
 var createNotificationTracker = () => {
-  let persistedData = loadPersistedData();
+  const persistedData = loadPersistedData();
   let lastError;
   let saveTimeout = null;
   const scheduleSave = () => {
@@ -773,9 +773,678 @@ var createUsageTracker = () => {
   };
 };
 
+// src/i18n/locales/en-US.ts
+var enUS = {
+  common: {
+    today: "Today",
+    yesterday: "Yesterday",
+    none: "None",
+    noData: "No data",
+    notAvailable: "N/A",
+    loading: "Loading...",
+    live: "Live",
+    focused: "Focused",
+    tracking: "Tracking",
+    unknown: "Unknown"
+  },
+  locales: {
+    "zh-CN": "\u7B80\u4F53\u4E2D\u6587",
+    "en-US": "English"
+  },
+  nav: {
+    dashboard: "Dashboard",
+    insights: "Insights",
+    apps: "Apps",
+    notifications: "Notifications",
+    settings: "Settings"
+  },
+  sidebar: {
+    focusScore: "Focus score"
+  },
+  themes: {
+    dark: {
+      name: "Dark",
+      description: "Easy on the eyes, perfect for night"
+    },
+    light: {
+      name: "Light",
+      description: "Clean and bright for daytime"
+    },
+    tokyo: {
+      name: "Tokyo",
+      description: "Cyberpunk vibes with purple accents"
+    },
+    skin: {
+      name: "Skin",
+      description: "Warm and soft aesthetic"
+    }
+  },
+  dashboard: {
+    greeting: {
+      morning: "Good morning",
+      afternoon: "Good afternoon",
+      evening: "Good evening"
+    },
+    subtitle: "Your screen time for today",
+    cards: {
+      screenTime: "Screen Time",
+      totalToday: "Total today",
+      dailyAverage: "Daily Avg",
+      acrossDays: "Across {count} days",
+      noHistory: "No history yet",
+      topCategory: "Top Category",
+      notifications: "Notifications",
+      topNotificationApp: "Top: {name}"
+    },
+    charts: {
+      dailyUsageTitle: "Daily usage",
+      dailyUsageSubtitle: "Minutes per day across all apps",
+      dailyUsageEmpty: "Start using apps to see your usage data",
+      categoriesTitle: "Categories",
+      categoriesSubtitle: "Time by category today",
+      categoriesEmpty: "No category data yet",
+      usageDataset: "Usage (minutes)",
+      minutesDataset: "Minutes"
+    },
+    sections: {
+      topAppsToday: "Top Apps Today",
+      activeApps: "Active apps",
+      activeAppsSubtitle: "Currently open windows",
+      activeAppsEmpty: "No apps with visible windows detected",
+      currentFocus: "Current focus",
+      appsUsedToday: "Apps used today",
+      daysRecorded: "Days recorded",
+      noActiveApp: "No active app",
+      otherApps: "Other apps"
+    },
+    trend: {
+      collecting: "Collecting data",
+      newData: "New data",
+      up: "Trending up",
+      down: "Trending down",
+      stable: "Stable"
+    }
+  },
+  insights: {
+    title: "Insights",
+    subtitle: "Deep dive into your screen time patterns",
+    cards: {
+      focusScore: "Focus Score",
+      focusScoreSub: "Based on productive app usage",
+      appsUsed: "Apps Used",
+      topApp: "Top app",
+      topAppSub: "Most used by minutes",
+      totalTracked: "Total tracked",
+      totalTrackedSub: "All time screen time"
+    },
+    charts: {
+      weeklyTrendTitle: "Weekly trend",
+      weeklyTrendSubtitle: "Screen time over the last 7 days",
+      weeklyTrendEmpty: "Start using apps to see trends",
+      categoryBreakdownTitle: "Category breakdown",
+      categoryBreakdownSubtitle: "How you spend your screen time",
+      categoryBreakdownEmpty: "No category data yet",
+      minutesDataset: "Minutes"
+    },
+    quickStats: {
+      title: "Quick stats",
+      daysTracked: "Days tracked",
+      appsUsed: "Apps used",
+      dailyAverage: "Daily average",
+      topCategory: "Top category",
+      peakDay: "Peak day"
+    }
+  },
+  apps: {
+    title: "Apps",
+    subtitle: "Screen time for {date}",
+    dateView: "View:",
+    stats: {
+      totalTime: "Total Time",
+      appsUsed: "Apps Used",
+      topCategory: "Top Category"
+    },
+    openApps: {
+      title: "Open apps",
+      subtitle: "Apps with visible windows",
+      empty: "No apps with visible windows detected yet."
+    },
+    backgroundApps: {
+      title: "Background processes",
+      subtitle: "Running without visible windows",
+      empty: "No background processes detected.",
+      processCount: "{count} process(es)"
+    },
+    timeLimits: {
+      title: "Active Time Limits",
+      subtitle: "{count} app(s) with limits",
+      usage: "{used} / {limit} min",
+      exceeded: "Exceeded",
+      setLimit: "Set time limit",
+      edit: "Edit",
+      remove: "Remove",
+      save: "Save",
+      cancel: "Cancel",
+      limit: "Limit:",
+      minutesPlaceholder: "Minutes",
+      perDayUnit: "min/day"
+    },
+    controls: {
+      searchPlaceholder: "Search apps...",
+      sortBy: "Sort by:",
+      time: "Time",
+      name: "Name",
+      category: "Category"
+    },
+    empty: {
+      search: "No apps match your search",
+      date: "No apps tracked for {date}"
+    },
+    cards: {
+      percentageOfTotal: "{count}% of total"
+    }
+  },
+  notifications: {
+    title: "Notifications",
+    subtitle: "Track notification activity from your apps today",
+    status: {
+      disabledTitle: "Notification Logs Disabled",
+      disabledMessage: "Windows notification logs are disabled. Enable them in Event Viewer or run as Administrator.",
+      errorTitle: "Error Reading Logs",
+      errorMessage: "Failed to read notification logs.",
+      errorWithDetails: "Failed to read notification logs: {detail}"
+    },
+    stats: {
+      totalToday: "Total Today",
+      apps: "Apps",
+      avgPerApp: "Avg per App",
+      topSender: "Top Sender"
+    },
+    breakdown: {
+      title: "Breakdown by App",
+      subtitle: "Notifications received today per application",
+      countBadge: "{count} apps",
+      app: "Application",
+      count: "Count",
+      emptyTitle: "No notifications tracked yet",
+      emptySubtitle: "Notifications from your apps will appear here as they come in.",
+      emptyActionSubtitle: "Fix the issue above to start tracking notifications.",
+      otherApps: "Other Apps"
+    },
+    tips: {
+      title: "Reduce Distractions",
+      subtitle: "Tips for managing notification overload",
+      focusAssistTitle: "Enable Focus Assist",
+      focusAssistDesc: "Use Windows Focus Assist to silence notifications during work hours. Access it from the Action Center or Settings.",
+      appNotificationsTitle: "Configure App Notifications",
+      appNotificationsDesc: "Go to Windows Settings > System > Notifications to customize which apps can send you notifications.",
+      timeLimitsTitle: "Set Time Limits",
+      timeLimitsDesc: "Use the Apps page to set daily time limits for distracting applications. You will receive a notification when limits are exceeded."
+    }
+  },
+  settings: {
+    title: "Settings",
+    subtitle: "Customize your ScreenForge experience",
+    loadingSubtitle: "Loading...",
+    sections: {
+      appearance: "Appearance",
+      appearanceDesc: "Choose your preferred theme",
+      language: "Language",
+      languageDesc: "Choose your interface language",
+      behavior: "Behavior",
+      behaviorDesc: "Control how ScreenForge runs",
+      timeLimits: "Time Limits",
+      timeLimitsDesc: "Control app usage notifications",
+      data: "Data",
+      dataDesc: "Manage your tracked data",
+      about: "About"
+    },
+    behavior: {
+      startWithWindows: "Start with Windows",
+      startWithWindowsDesc: "Launch ScreenForge when you log in",
+      minimizeToTray: "Minimize to tray",
+      minimizeToTrayDesc: "Keep running in background when closed"
+    },
+    timeLimits: {
+      notifications: "Time limit notifications",
+      notificationsDesc: "Get notified when you exceed app time limits",
+      activeLimits: "Active limits",
+      activeLimitsDesc: "You have {count} app(s) with time limits. Manage them on the Apps page."
+    },
+    data: {
+      clearAll: "Clear all data",
+      clearAllDesc: "Remove all tracked usage history",
+      clearButton: "Clear data",
+      clearConfirm: "Are you sure? This will delete all your usage data."
+    },
+    about: {
+      version: "Version",
+      platform: "Platform",
+      builtWith: "Built with",
+      windows: "Windows",
+      techStack: "Electron + React"
+    }
+  },
+  tables: {
+    topApps: "Top apps",
+    usageToday: "Usage today",
+    app: "App",
+    category: "Category",
+    time: "Time",
+    notifications: "Notifications",
+    empty: "No app data yet for today",
+    notificationToday: "Today",
+    notificationEmpty: "No notifications yet"
+  },
+  datePicker: {
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
+    dataAvailable: "Data available",
+    dataRange: "Data from {start} to {end}"
+  },
+  suggestions: {
+    title: "Suggestions",
+    subtitle: "Based on your recent activity",
+    welcome: {
+      title: "Welcome to ScreenForge!",
+      detail: "Keep the app running to track your screen time automatically."
+    },
+    entertainment: {
+      title: "High entertainment usage",
+      detail: "Consider setting time limits for entertainment apps to boost productivity."
+    },
+    social: {
+      title: "Social apps taking over",
+      detail: "Try scheduling specific times for checking social media."
+    },
+    productive: {
+      title: "Great focus!",
+      detail: "You're spending most of your time on productive tasks. Keep it up!"
+    },
+    balance: {
+      title: "Balanced usage",
+      detail: "Your screen time is well distributed across different activities."
+    },
+    breaks: {
+      title: "Remember to take breaks",
+      detail: "Use the 20-20-20 rule: every 20 minutes, look at something 20 feet away for 20 seconds."
+    }
+  },
+  native: {
+    timeLimitReachedTitle: "Time Limit Reached",
+    timeLimitReachedBody: "You've used {appName} for {usedMinutes} minutes today. Your limit is {limitMinutes} minutes.",
+    trayTooltip: "ScreenForge - Screen Time Tracker",
+    trayShow: "Show ScreenForge",
+    trayQuit: "Quit"
+  },
+  categories: {
+    Productivity: "Productivity",
+    Education: "Education",
+    Communication: "Communication",
+    Utilities: "Utilities",
+    Browsers: "Browsers",
+    Entertainment: "Entertainment",
+    Social: "Social",
+    System: "System",
+    Other: "Other",
+    Unknown: "Unknown"
+  }
+};
+
+// src/i18n/locales/zh-CN.ts
+var zhCN = {
+  common: {
+    today: "\u4ECA\u5929",
+    yesterday: "\u6628\u5929",
+    none: "\u65E0",
+    noData: "\u6682\u65E0\u6570\u636E",
+    notAvailable: "\u6682\u65E0",
+    loading: "\u52A0\u8F7D\u4E2D...",
+    live: "\u5B9E\u65F6",
+    focused: "\u5F53\u524D\u7126\u70B9",
+    tracking: "\u8FFD\u8E2A\u4E2D",
+    unknown: "\u672A\u77E5"
+  },
+  locales: {
+    "zh-CN": "\u7B80\u4F53\u4E2D\u6587",
+    "en-US": "English"
+  },
+  nav: {
+    dashboard: "\u4EEA\u8868\u76D8",
+    insights: "\u6D1E\u5BDF",
+    apps: "\u5E94\u7528",
+    notifications: "\u901A\u77E5",
+    settings: "\u8BBE\u7F6E"
+  },
+  sidebar: {
+    focusScore: "\u4E13\u6CE8\u5206"
+  },
+  themes: {
+    dark: {
+      name: "\u6DF1\u8272",
+      description: "\u66F4\u62A4\u773C\uFF0C\u9002\u5408\u591C\u95F4\u4F7F\u7528"
+    },
+    light: {
+      name: "\u6D45\u8272",
+      description: "\u6E05\u723D\u660E\u4EAE\uFF0C\u9002\u5408\u767D\u5929\u4F7F\u7528"
+    },
+    tokyo: {
+      name: "\u4E1C\u4EAC",
+      description: "\u5E26\u6709\u9713\u8679\u611F\u7684\u672A\u6765\u98CE\u914D\u8272"
+    },
+    skin: {
+      name: "\u6696\u80A4",
+      description: "\u6E29\u6696\u67D4\u548C\u7684\u754C\u9762\u98CE\u683C"
+    }
+  },
+  dashboard: {
+    greeting: {
+      morning: "\u65E9\u4E0A\u597D",
+      afternoon: "\u4E0B\u5348\u597D",
+      evening: "\u665A\u4E0A\u597D"
+    },
+    subtitle: "\u67E5\u770B\u4F60\u4ECA\u5929\u7684\u5C4F\u5E55\u4F7F\u7528\u60C5\u51B5",
+    cards: {
+      screenTime: "\u5C4F\u5E55\u65F6\u957F",
+      totalToday: "\u4ECA\u65E5\u603B\u8BA1",
+      dailyAverage: "\u65E5\u5747",
+      acrossDays: "\u8FD1 {count} \u5929\u5E73\u5747",
+      noHistory: "\u6682\u65E0\u5386\u53F2\u8BB0\u5F55",
+      topCategory: "\u6700\u9AD8\u5206\u7C7B",
+      notifications: "\u901A\u77E5\u6570",
+      topNotificationApp: "\u6700\u9AD8\uFF1A{name}"
+    },
+    charts: {
+      dailyUsageTitle: "\u6BCF\u65E5\u4F7F\u7528\u8D8B\u52BF",
+      dailyUsageSubtitle: "\u6240\u6709\u5E94\u7528\u6BCF\u5929\u7684\u4F7F\u7528\u5206\u949F\u6570",
+      dailyUsageEmpty: "\u5F00\u59CB\u4F7F\u7528\u5E94\u7528\u540E\uFF0C\u8FD9\u91CC\u4F1A\u663E\u793A\u4F60\u7684\u4F7F\u7528\u6570\u636E",
+      categoriesTitle: "\u5206\u7C7B\u5206\u5E03",
+      categoriesSubtitle: "\u4ECA\u5929\u5404\u5206\u7C7B\u7684\u4F7F\u7528\u65F6\u957F",
+      categoriesEmpty: "\u6682\u65E0\u5206\u7C7B\u6570\u636E",
+      usageDataset: "\u4F7F\u7528\u65F6\u957F\uFF08\u5206\u949F\uFF09",
+      minutesDataset: "\u5206\u949F"
+    },
+    sections: {
+      topAppsToday: "\u4ECA\u65E5\u5E38\u7528\u5E94\u7528",
+      activeApps: "\u6D3B\u8DC3\u5E94\u7528",
+      activeAppsSubtitle: "\u5F53\u524D\u5DF2\u6253\u5F00\u7684\u7A97\u53E3",
+      activeAppsEmpty: "\u6682\u672A\u68C0\u6D4B\u5230\u53EF\u89C1\u7A97\u53E3\u5E94\u7528",
+      currentFocus: "\u5F53\u524D\u4E13\u6CE8\u5E94\u7528",
+      appsUsedToday: "\u4ECA\u65E5\u4F7F\u7528\u5E94\u7528\u6570",
+      daysRecorded: "\u8BB0\u5F55\u5929\u6570",
+      noActiveApp: "\u5F53\u524D\u6CA1\u6709\u6D3B\u8DC3\u5E94\u7528",
+      otherApps: "\u5176\u4ED6\u5E94\u7528"
+    },
+    trend: {
+      collecting: "\u6B63\u5728\u6536\u96C6\u6570\u636E",
+      newData: "\u521A\u5F00\u59CB\u8BB0\u5F55",
+      up: "\u5448\u4E0A\u5347\u8D8B\u52BF",
+      down: "\u5448\u4E0B\u964D\u8D8B\u52BF",
+      stable: "\u57FA\u672C\u7A33\u5B9A"
+    }
+  },
+  insights: {
+    title: "\u6D1E\u5BDF",
+    subtitle: "\u66F4\u6DF1\u5165\u5730\u4E86\u89E3\u4F60\u7684\u5C4F\u5E55\u4F7F\u7528\u6A21\u5F0F",
+    cards: {
+      focusScore: "\u4E13\u6CE8\u5206",
+      focusScoreSub: "\u57FA\u4E8E\u9AD8\u6548\u5E94\u7528\u4F7F\u7528\u60C5\u51B5\u8BA1\u7B97",
+      appsUsed: "\u4F7F\u7528\u5E94\u7528\u6570",
+      topApp: "\u6700\u5E38\u7528\u5E94\u7528",
+      topAppSub: "\u6309\u5206\u949F\u6570\u7EDF\u8BA1",
+      totalTracked: "\u7D2F\u8BA1\u8BB0\u5F55",
+      totalTrackedSub: "\u5168\u90E8\u5386\u53F2\u5C4F\u5E55\u65F6\u957F"
+    },
+    charts: {
+      weeklyTrendTitle: "\u8FD1\u4E00\u5468\u8D8B\u52BF",
+      weeklyTrendSubtitle: "\u8FC7\u53BB 7 \u5929\u7684\u5C4F\u5E55\u4F7F\u7528\u65F6\u957F",
+      weeklyTrendEmpty: "\u5F00\u59CB\u4F7F\u7528\u5E94\u7528\u540E\uFF0C\u8FD9\u91CC\u4F1A\u663E\u793A\u8D8B\u52BF",
+      categoryBreakdownTitle: "\u5206\u7C7B\u5360\u6BD4",
+      categoryBreakdownSubtitle: "\u4F60\u7684\u5C4F\u5E55\u65F6\u95F4\u4E3B\u8981\u82B1\u5728\u54EA\u91CC",
+      categoryBreakdownEmpty: "\u6682\u65E0\u5206\u7C7B\u6570\u636E",
+      minutesDataset: "\u5206\u949F"
+    },
+    quickStats: {
+      title: "\u901F\u89C8\u7EDF\u8BA1",
+      daysTracked: "\u8BB0\u5F55\u5929\u6570",
+      appsUsed: "\u4F7F\u7528\u5E94\u7528\u6570",
+      dailyAverage: "\u65E5\u5747\u65F6\u957F",
+      topCategory: "\u6700\u9AD8\u5206\u7C7B",
+      peakDay: "\u5CF0\u503C\u65E5\u671F"
+    }
+  },
+  apps: {
+    title: "\u5E94\u7528",
+    subtitle: "{date} \u7684\u5C4F\u5E55\u4F7F\u7528\u60C5\u51B5",
+    dateView: "\u67E5\u770B\uFF1A",
+    stats: {
+      totalTime: "\u603B\u65F6\u957F",
+      appsUsed: "\u4F7F\u7528\u5E94\u7528\u6570",
+      topCategory: "\u6700\u9AD8\u5206\u7C7B"
+    },
+    openApps: {
+      title: "\u5DF2\u6253\u5F00\u5E94\u7528",
+      subtitle: "\u6709\u53EF\u89C1\u7A97\u53E3\u7684\u5E94\u7528",
+      empty: "\u6682\u672A\u68C0\u6D4B\u5230\u6709\u53EF\u89C1\u7A97\u53E3\u7684\u5E94\u7528\u3002"
+    },
+    backgroundApps: {
+      title: "\u540E\u53F0\u8FDB\u7A0B",
+      subtitle: "\u6B63\u5728\u8FD0\u884C\u4F46\u6CA1\u6709\u53EF\u89C1\u7A97\u53E3",
+      empty: "\u672A\u68C0\u6D4B\u5230\u540E\u53F0\u8FDB\u7A0B\u3002",
+      processCount: "{count} \u4E2A\u8FDB\u7A0B"
+    },
+    timeLimits: {
+      title: "\u5DF2\u542F\u7528\u65F6\u957F\u9650\u5236",
+      subtitle: "\u5171 {count} \u4E2A\u5E94\u7528\u8BBE\u7F6E\u4E86\u9650\u989D",
+      usage: "{used} / {limit} \u5206\u949F",
+      exceeded: "\u5DF2\u8D85\u9650",
+      setLimit: "\u8BBE\u7F6E\u65F6\u957F\u9650\u5236",
+      edit: "\u7F16\u8F91",
+      remove: "\u79FB\u9664",
+      save: "\u4FDD\u5B58",
+      cancel: "\u53D6\u6D88",
+      limit: "\u9650\u5236\uFF1A",
+      minutesPlaceholder: "\u5206\u949F",
+      perDayUnit: "\u5206\u949F/\u5929"
+    },
+    controls: {
+      searchPlaceholder: "\u641C\u7D22\u5E94\u7528...",
+      sortBy: "\u6392\u5E8F\u65B9\u5F0F\uFF1A",
+      time: "\u65F6\u957F",
+      name: "\u540D\u79F0",
+      category: "\u5206\u7C7B"
+    },
+    empty: {
+      search: "\u6CA1\u6709\u5339\u914D\u641C\u7D22\u6761\u4EF6\u7684\u5E94\u7528",
+      date: "{date} \u6682\u65E0\u5E94\u7528\u4F7F\u7528\u8BB0\u5F55"
+    },
+    cards: {
+      percentageOfTotal: "\u5360\u603B\u65F6\u957F {count}%"
+    }
+  },
+  notifications: {
+    title: "\u901A\u77E5",
+    subtitle: "\u8DDF\u8E2A\u4ECA\u5929\u6765\u81EA\u5404\u5E94\u7528\u7684\u901A\u77E5\u6D3B\u52A8",
+    status: {
+      disabledTitle: "\u901A\u77E5\u65E5\u5FD7\u672A\u542F\u7528",
+      disabledMessage: "Windows \u901A\u77E5\u65E5\u5FD7\u5F53\u524D\u5DF2\u5173\u95ED\uFF0C\u8BF7\u5728\u4E8B\u4EF6\u67E5\u770B\u5668\u4E2D\u542F\u7528\uFF0C\u6216\u5C1D\u8BD5\u4EE5\u7BA1\u7406\u5458\u8EAB\u4EFD\u8FD0\u884C\u3002",
+      errorTitle: "\u8BFB\u53D6\u65E5\u5FD7\u5931\u8D25",
+      errorMessage: "\u8BFB\u53D6\u901A\u77E5\u65E5\u5FD7\u5931\u8D25\u3002",
+      errorWithDetails: "\u8BFB\u53D6\u901A\u77E5\u65E5\u5FD7\u5931\u8D25\uFF1A{detail}"
+    },
+    stats: {
+      totalToday: "\u4ECA\u65E5\u603B\u6570",
+      apps: "\u5E94\u7528\u6570",
+      avgPerApp: "\u5355\u5E94\u7528\u5E73\u5747",
+      topSender: "\u6700\u9AD8\u6765\u6E90"
+    },
+    breakdown: {
+      title: "\u6309\u5E94\u7528\u62C6\u5206",
+      subtitle: "\u4ECA\u5929\u6BCF\u4E2A\u5E94\u7528\u6536\u5230\u7684\u901A\u77E5\u6570",
+      countBadge: "{count} \u4E2A\u5E94\u7528",
+      app: "\u5E94\u7528",
+      count: "\u6570\u91CF",
+      emptyTitle: "\u8FD8\u6CA1\u6709\u8BB0\u5F55\u5230\u901A\u77E5",
+      emptySubtitle: "\u6765\u81EA\u5E94\u7528\u7684\u901A\u77E5\u4F1A\u5728\u6536\u5230\u540E\u663E\u793A\u5728\u8FD9\u91CC\u3002",
+      emptyActionSubtitle: "\u5148\u89E3\u51B3\u4E0A\u65B9\u95EE\u9898\uFF0C\u4E4B\u540E\u5373\u53EF\u5F00\u59CB\u8DDF\u8E2A\u901A\u77E5\u3002",
+      otherApps: "\u5176\u4ED6\u5E94\u7528"
+    },
+    tips: {
+      title: "\u51CF\u5C11\u5E72\u6270",
+      subtitle: "\u7BA1\u7406\u901A\u77E5\u8FC7\u8F7D\u7684\u5C0F\u5EFA\u8BAE",
+      focusAssistTitle: "\u5F00\u542F\u4E13\u6CE8\u52A9\u624B",
+      focusAssistDesc: "\u4F7F\u7528 Windows \u4E13\u6CE8\u52A9\u624B\u5728\u5DE5\u4F5C\u65F6\u6BB5\u9759\u97F3\u901A\u77E5\uFF0C\u53EF\u5728\u64CD\u4F5C\u4E2D\u5FC3\u6216\u8BBE\u7F6E\u4E2D\u5F00\u542F\u3002",
+      appNotificationsTitle: "\u914D\u7F6E\u5E94\u7528\u901A\u77E5",
+      appNotificationsDesc: "\u524D\u5F80 Windows \u8BBE\u7F6E > \u7CFB\u7EDF > \u901A\u77E5\uFF0C\u81EA\u5B9A\u4E49\u54EA\u4E9B\u5E94\u7528\u53EF\u4EE5\u5411\u4F60\u53D1\u9001\u901A\u77E5\u3002",
+      timeLimitsTitle: "\u8BBE\u7F6E\u65F6\u957F\u9650\u5236",
+      timeLimitsDesc: "\u4F60\u53EF\u4EE5\u5728\u201C\u5E94\u7528\u201D\u9875\u9762\u4E3A\u5BB9\u6613\u5206\u5FC3\u7684\u5E94\u7528\u8BBE\u7F6E\u6BCF\u65E5\u9650\u5236\uFF0C\u8D85\u9650\u540E\u4F1A\u6536\u5230\u63D0\u9192\u3002"
+    }
+  },
+  settings: {
+    title: "\u8BBE\u7F6E",
+    subtitle: "\u81EA\u5B9A\u4E49\u4F60\u7684 ScreenForge \u4F7F\u7528\u4F53\u9A8C",
+    loadingSubtitle: "\u52A0\u8F7D\u4E2D...",
+    sections: {
+      appearance: "\u5916\u89C2",
+      appearanceDesc: "\u9009\u62E9\u4F60\u559C\u6B22\u7684\u4E3B\u9898",
+      language: "\u8BED\u8A00",
+      languageDesc: "\u9009\u62E9\u754C\u9762\u663E\u793A\u8BED\u8A00",
+      behavior: "\u884C\u4E3A",
+      behaviorDesc: "\u63A7\u5236 ScreenForge \u7684\u8FD0\u884C\u65B9\u5F0F",
+      timeLimits: "\u65F6\u957F\u9650\u5236",
+      timeLimitsDesc: "\u63A7\u5236\u5E94\u7528\u4F7F\u7528\u63D0\u9192",
+      data: "\u6570\u636E",
+      dataDesc: "\u7BA1\u7406\u5DF2\u8BB0\u5F55\u7684\u6570\u636E",
+      about: "\u5173\u4E8E"
+    },
+    behavior: {
+      startWithWindows: "\u5F00\u673A\u542F\u52A8",
+      startWithWindowsDesc: "\u767B\u5F55 Windows \u540E\u81EA\u52A8\u542F\u52A8 ScreenForge",
+      minimizeToTray: "\u6700\u5C0F\u5316\u5230\u6258\u76D8",
+      minimizeToTrayDesc: "\u5173\u95ED\u7A97\u53E3\u540E\u7EE7\u7EED\u5728\u540E\u53F0\u8FD0\u884C"
+    },
+    timeLimits: {
+      notifications: "\u65F6\u957F\u8D85\u9650\u63D0\u9192",
+      notificationsDesc: "\u5F53\u5E94\u7528\u4F7F\u7528\u8D85\u51FA\u9650\u5236\u65F6\u53D1\u9001\u63D0\u9192",
+      activeLimits: "\u5F53\u524D\u9650\u5236",
+      activeLimitsDesc: "\u4F60\u5DF2\u4E3A {count} \u4E2A\u5E94\u7528\u8BBE\u7F6E\u65F6\u957F\u9650\u5236\uFF0C\u53EF\u524D\u5F80\u201C\u5E94\u7528\u201D\u9875\u9762\u7BA1\u7406\u3002"
+    },
+    data: {
+      clearAll: "\u6E05\u7A7A\u6240\u6709\u6570\u636E",
+      clearAllDesc: "\u5220\u9664\u6240\u6709\u5DF2\u8BB0\u5F55\u7684\u4F7F\u7528\u5386\u53F2",
+      clearButton: "\u6E05\u7A7A\u6570\u636E",
+      clearConfirm: "\u786E\u5B9A\u5417\uFF1F\u8FD9\u5C06\u5220\u9664\u4F60\u6240\u6709\u7684\u4F7F\u7528\u6570\u636E\u3002"
+    },
+    about: {
+      version: "\u7248\u672C",
+      platform: "\u5E73\u53F0",
+      builtWith: "\u6280\u672F\u6808",
+      windows: "Windows",
+      techStack: "Electron + React"
+    }
+  },
+  tables: {
+    topApps: "\u5E38\u7528\u5E94\u7528",
+    usageToday: "\u4ECA\u65E5\u4F7F\u7528\u60C5\u51B5",
+    app: "\u5E94\u7528",
+    category: "\u5206\u7C7B",
+    time: "\u65F6\u957F",
+    notifications: "\u901A\u77E5",
+    empty: "\u4ECA\u5929\u8FD8\u6CA1\u6709\u5E94\u7528\u6570\u636E",
+    notificationToday: "\u4ECA\u5929",
+    notificationEmpty: "\u8FD8\u6CA1\u6709\u901A\u77E5"
+  },
+  datePicker: {
+    previousMonth: "\u4E0A\u4E2A\u6708",
+    nextMonth: "\u4E0B\u4E2A\u6708",
+    dataAvailable: "\u6709\u6570\u636E\u8BB0\u5F55",
+    dataRange: "\u6570\u636E\u8303\u56F4\uFF1A{start} \u81F3 {end}"
+  },
+  suggestions: {
+    title: "\u5EFA\u8BAE",
+    subtitle: "\u57FA\u4E8E\u4F60\u6700\u8FD1\u7684\u6D3B\u52A8\u751F\u6210",
+    welcome: {
+      title: "\u6B22\u8FCE\u4F7F\u7528 ScreenForge\uFF01",
+      detail: "\u4FDD\u6301\u5E94\u7528\u5728\u540E\u53F0\u8FD0\u884C\uFF0C\u5373\u53EF\u81EA\u52A8\u8BB0\u5F55\u4F60\u7684\u5C4F\u5E55\u65F6\u957F\u3002"
+    },
+    entertainment: {
+      title: "\u5A31\u4E50\u5E94\u7528\u4F7F\u7528\u504F\u9AD8",
+      detail: "\u53EF\u4EE5\u8003\u8651\u4E3A\u5A31\u4E50\u7C7B\u5E94\u7528\u8BBE\u7F6E\u65F6\u957F\u9650\u5236\uFF0C\u63D0\u5347\u4E13\u6CE8\u5EA6\u3002"
+    },
+    social: {
+      title: "\u793E\u4EA4\u5E94\u7528\u5360\u6BD4\u504F\u9AD8",
+      detail: "\u8BD5\u7740\u7ED9\u67E5\u770B\u793E\u4EA4\u5A92\u4F53\u5B89\u6392\u56FA\u5B9A\u65F6\u95F4\uFF0C\u51CF\u5C11\u9891\u7E41\u6253\u65AD\u3002"
+    },
+    productive: {
+      title: "\u4E13\u6CE8\u72B6\u6001\u4E0D\u9519\uFF01",
+      detail: "\u4F60\u5927\u90E8\u5206\u65F6\u95F4\u90FD\u82B1\u5728\u9AD8\u6548\u4EFB\u52A1\u4E0A\uFF0C\u7EE7\u7EED\u4FDD\u6301\u3002"
+    },
+    balance: {
+      title: "\u4F7F\u7528\u5206\u5E03\u8F83\u5747\u8861",
+      detail: "\u4F60\u7684\u5C4F\u5E55\u65F6\u95F4\u5728\u4E0D\u540C\u6D3B\u52A8\u4E4B\u95F4\u5206\u914D\u5F97\u6BD4\u8F83\u5E73\u8861\u3002"
+    },
+    breaks: {
+      title: "\u8BB0\u5F97\u9002\u5F53\u4F11\u606F",
+      detail: "\u8BD5\u8BD5 20-20-20 \u6CD5\u5219\uFF1A\u6BCF 20 \u5206\u949F\uFF0C\u770B\u5411 20 \u82F1\u5C3A\u5916\u7684\u7269\u4F53 20 \u79D2\u3002"
+    }
+  },
+  native: {
+    timeLimitReachedTitle: "\u5DF2\u8FBE\u5230\u65F6\u957F\u9650\u5236",
+    timeLimitReachedBody: "\u4ECA\u5929\u4F60\u5DF2\u4F7F\u7528 {appName} {usedMinutes} \u5206\u949F\uFF0C\u8D85\u8FC7\u8BBE\u5B9A\u9650\u5236 {limitMinutes} \u5206\u949F\u3002",
+    trayTooltip: "ScreenForge - \u5C4F\u5E55\u65F6\u95F4\u8FFD\u8E2A\u5668",
+    trayShow: "\u663E\u793A ScreenForge",
+    trayQuit: "\u9000\u51FA"
+  },
+  categories: {
+    Productivity: "\u751F\u4EA7\u529B",
+    Education: "\u6559\u80B2",
+    Communication: "\u6C9F\u901A",
+    Utilities: "\u5DE5\u5177",
+    Browsers: "\u6D4F\u89C8\u5668",
+    Entertainment: "\u5A31\u4E50",
+    Social: "\u793E\u4EA4",
+    System: "\u7CFB\u7EDF",
+    Other: "\u5176\u4ED6",
+    Unknown: "\u672A\u77E5"
+  }
+};
+
+// src/i18n/types.ts
+var supportedLocales = ["zh-CN", "en-US"];
+
+// src/i18n/core.ts
+var dictionaries = {
+  "zh-CN": zhCN,
+  "en-US": enUS
+};
+var defaultLocale = "zh-CN";
+var normalizeLocale = (value) => {
+  if (!value) return defaultLocale;
+  if (supportedLocales.includes(value)) return value;
+  if (value.toLowerCase().startsWith("zh")) return "zh-CN";
+  if (value.toLowerCase().startsWith("en")) return "en-US";
+  return defaultLocale;
+};
+var getNestedValue = (tree, path4) => {
+  const value = path4.split(".").reduce((current, segment) => {
+    if (!current || typeof current === "string") {
+      return void 0;
+    }
+    return current[segment];
+  }, tree);
+  return typeof value === "string" ? value : void 0;
+};
+var interpolate = (template, params) => {
+  if (!params) return template;
+  return template.replace(/\{(\w+)\}/g, (_match, key) => String(params[key] ?? ""));
+};
+var translate = (locale, key, params) => {
+  const resolvedLocale = normalizeLocale(locale);
+  const template = getNestedValue(dictionaries[resolvedLocale], key) ?? getNestedValue(dictionaries[defaultLocale], key) ?? key;
+  return interpolate(template, params);
+};
+
 // electron/main.ts
-var { app: app3, BrowserWindow, Tray, Menu, nativeImage, Notification } = electron;
-var { ipcMain } = electron;
 var isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 var usageTracker = createUsageTracker();
 var notificationTracker = createNotificationTracker();
@@ -807,9 +1476,11 @@ var settings = {
   minimizeToTray: true,
   startWithWindows: false,
   timeLimits: [],
-  timeLimitNotificationsEnabled: true
+  timeLimitNotificationsEnabled: true,
+  language: defaultLocale
 };
 var shownAlerts = [];
+var mt = (key, params) => translate(settings.language, key, params);
 var getTodayDateString3 = () => {
   const now = /* @__PURE__ */ new Date();
   const year = now.getFullYear();
@@ -818,11 +1489,11 @@ var getTodayDateString3 = () => {
   return `${year}-${month}-${day}`;
 };
 var getSettingsPath = () => {
-  const userDataPath = app3.getPath("userData");
+  const userDataPath = import_electron3.app.getPath("userData");
   return import_node_path.default.join(userDataPath, "settings.json");
 };
 var getAlertsPath = () => {
-  const userDataPath = app3.getPath("userData");
+  const userDataPath = import_electron3.app.getPath("userData");
   return import_node_path.default.join(userDataPath, "alerts.json");
 };
 var loadSettings = () => {
@@ -835,7 +1506,8 @@ var loadSettings = () => {
         minimizeToTray: loaded.minimizeToTray ?? true,
         startWithWindows: loaded.startWithWindows ?? false,
         timeLimits: loaded.timeLimits ?? [],
-        timeLimitNotificationsEnabled: loaded.timeLimitNotificationsEnabled ?? true
+        timeLimitNotificationsEnabled: loaded.timeLimitNotificationsEnabled ?? true,
+        language: normalizeLocale(loaded.language)
       };
     }
   } catch {
@@ -899,9 +1571,13 @@ var checkTimeLimits = () => {
       if (!alreadyNotified) {
         const appInfo = appLookup.get(limit.appId);
         const appName = appInfo?.name ?? limit.appId;
-        const notification = new Notification({
-          title: "Time Limit Reached",
-          body: `You've used ${appName} for ${usedMinutes} minutes today. Your limit is ${limit.limitMinutes} minutes.`,
+        const notification = new import_electron3.Notification({
+          title: mt("native.timeLimitReachedTitle"),
+          body: mt("native.timeLimitReachedBody", {
+            appName,
+            usedMinutes,
+            limitMinutes: limit.limitMinutes
+          }),
           icon: void 0,
           silent: false
         });
@@ -930,8 +1606,8 @@ var generateSuggestions = () => {
   if (snapshot.usageEntries.length === 0) {
     suggestions.push({
       id: "welcome",
-      title: "Welcome to ScreenForge!",
-      detail: "Keep the app running to track your screen time automatically."
+      title: mt("suggestions.welcome.title"),
+      detail: mt("suggestions.welcome.detail")
     });
     return suggestions;
   }
@@ -948,39 +1624,63 @@ var generateSuggestions = () => {
   if (entertainmentMinutes > 0 && entertainmentMinutes / totalMinutes > 0.3) {
     suggestions.push({
       id: "entertainment",
-      title: "High entertainment usage",
-      detail: "Consider setting time limits for entertainment apps to boost productivity."
+      title: mt("suggestions.entertainment.title"),
+      detail: mt("suggestions.entertainment.detail")
     });
   }
   const socialMinutes = categoryMinutes.get("Social") ?? 0;
   if (socialMinutes > 0 && socialMinutes / totalMinutes > 0.2) {
     suggestions.push({
       id: "social",
-      title: "Social apps taking over",
-      detail: "Try scheduling specific times for checking social media."
+      title: mt("suggestions.social.title"),
+      detail: mt("suggestions.social.detail")
     });
   }
   const productiveMinutes = (categoryMinutes.get("Productivity") ?? 0) + (categoryMinutes.get("Education") ?? 0);
   if (productiveMinutes > 0 && productiveMinutes / totalMinutes > 0.5) {
     suggestions.push({
       id: "productive",
-      title: "Great focus!",
-      detail: "You're spending most of your time on productive tasks. Keep it up!"
+      title: mt("suggestions.productive.title"),
+      detail: mt("suggestions.productive.detail")
     });
   }
   if (suggestions.length === 0) {
     suggestions.push({
       id: "balance",
-      title: "Balanced usage",
-      detail: "Your screen time is well distributed across different activities."
+      title: mt("suggestions.balance.title"),
+      detail: mt("suggestions.balance.detail")
     });
   }
   suggestions.push({
     id: "breaks",
-    title: "Remember to take breaks",
-    detail: "Use the 20-20-20 rule: every 20 minutes, look at something 20 feet away for 20 seconds."
+    title: mt("suggestions.breaks.title"),
+    detail: mt("suggestions.breaks.detail")
   });
   return suggestions;
+};
+var buildTrayMenu = () => import_electron3.Menu.buildFromTemplate([
+  {
+    label: mt("native.trayShow"),
+    click: () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  },
+  { type: "separator" },
+  {
+    label: mt("native.trayQuit"),
+    click: () => {
+      isQuitting = true;
+      import_electron3.app.quit();
+    }
+  }
+]);
+var updateTrayMenu = () => {
+  if (!tray) return;
+  tray.setToolTip(mt("native.trayTooltip"));
+  tray.setContextMenu(buildTrayMenu());
 };
 var createTray = () => {
   const size = 16;
@@ -1026,29 +1726,9 @@ var createTray = () => {
   for (let x = 7; x <= 11; x++) {
     setPixel(x, 8, accentColor);
   }
-  const trayIcon = nativeImage.createFromBuffer(canvas, { width: size, height: size });
-  tray = new Tray(trayIcon);
-  tray.setToolTip("ScreenForge - Screen Time Tracker");
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: "Show ScreenForge",
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-        }
-      }
-    },
-    { type: "separator" },
-    {
-      label: "Quit",
-      click: () => {
-        isQuitting = true;
-        app3.quit();
-      }
-    }
-  ]);
-  tray.setContextMenu(contextMenu);
+  const trayIcon = import_electron3.nativeImage.createFromBuffer(canvas, { width: size, height: size });
+  tray = new import_electron3.Tray(trayIcon);
+  updateTrayMenu();
   tray.on("double-click", () => {
     if (mainWindow) {
       mainWindow.show();
@@ -1116,11 +1796,11 @@ var createAppIcon = () => {
     setPixel(x, 16, accentColor);
     setPixel(x, 17, accentColor);
   }
-  return nativeImage.createFromBuffer(canvas, { width: size, height: size });
+  return import_electron3.nativeImage.createFromBuffer(canvas, { width: size, height: size });
 };
 var createWindow = async () => {
   const appIcon = createAppIcon();
-  mainWindow = new BrowserWindow({
+  mainWindow = new import_electron3.BrowserWindow({
     width: 1240,
     height: 820,
     minWidth: 980,
@@ -1173,33 +1853,33 @@ var createWindow = async () => {
     await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
-    const indexPath = import_node_path.default.join(app3.getAppPath(), "dist", "index.html");
+    const indexPath = import_node_path.default.join(import_electron3.app.getAppPath(), "dist", "index.html");
     await mainWindow.loadFile(indexPath);
   }
 };
 var setAutoLaunch = (enable) => {
   if (process.platform !== "win32") return;
-  app3.setLoginItemSettings({
+  import_electron3.app.setLoginItemSettings({
     openAtLogin: enable,
-    path: app3.getPath("exe")
+    path: import_electron3.app.getPath("exe")
   });
 };
-app3.whenReady().then(() => {
+import_electron3.app.whenReady().then(() => {
   loadSettings();
   loadAlerts();
-  ipcMain.handle("usage:snapshot", () => usageTracker.getSnapshot());
-  ipcMain.handle("usage:clear", () => {
+  import_electron3.ipcMain.handle("usage:snapshot", () => usageTracker.getSnapshot());
+  import_electron3.ipcMain.handle("usage:clear", () => {
     usageTracker.clearData();
     return usageTracker.getSnapshot();
   });
-  ipcMain.handle("theme:set", (_event, theme) => {
+  import_electron3.ipcMain.handle("theme:set", (_event, theme) => {
     applyThemeToWindow(theme);
     return true;
   });
-  ipcMain.handle("suggestions:list", () => generateSuggestions());
-  ipcMain.handle("notifications:summary", () => notificationTracker.getSummary());
-  ipcMain.handle("settings:get", () => settings);
-  ipcMain.handle("settings:set", (_event, newSettings) => {
+  import_electron3.ipcMain.handle("suggestions:list", () => generateSuggestions());
+  import_electron3.ipcMain.handle("notifications:summary", () => notificationTracker.getSummary());
+  import_electron3.ipcMain.handle("settings:get", () => settings);
+  import_electron3.ipcMain.handle("settings:set", (_event, newSettings) => {
     if (typeof newSettings.minimizeToTray === "boolean") {
       settings.minimizeToTray = newSettings.minimizeToTray;
     }
@@ -1213,54 +1893,58 @@ app3.whenReady().then(() => {
     if (typeof newSettings.timeLimitNotificationsEnabled === "boolean") {
       settings.timeLimitNotificationsEnabled = newSettings.timeLimitNotificationsEnabled;
     }
+    if (newSettings.language) {
+      settings.language = normalizeLocale(newSettings.language);
+      updateTrayMenu();
+    }
     saveSettings();
     return settings;
   });
-  ipcMain.handle("timelimits:get", () => settings.timeLimits);
-  ipcMain.handle("timelimits:set", (_event, limits) => {
+  import_electron3.ipcMain.handle("timelimits:get", () => settings.timeLimits);
+  import_electron3.ipcMain.handle("timelimits:set", (_event, limits) => {
     settings.timeLimits = limits;
     saveSettings();
     return settings.timeLimits;
   });
-  ipcMain.handle("timelimits:add", (_event, limit) => {
+  import_electron3.ipcMain.handle("timelimits:add", (_event, limit) => {
     settings.timeLimits = settings.timeLimits.filter((l) => l.appId !== limit.appId);
     settings.timeLimits.push(limit);
     saveSettings();
     return settings.timeLimits;
   });
-  ipcMain.handle("timelimits:remove", (_event, appId) => {
+  import_electron3.ipcMain.handle("timelimits:remove", (_event, appId) => {
     settings.timeLimits = settings.timeLimits.filter((l) => l.appId !== appId);
     saveSettings();
     return settings.timeLimits;
   });
-  ipcMain.handle("timelimits:alerts", () => shownAlerts);
+  import_electron3.ipcMain.handle("timelimits:alerts", () => shownAlerts);
   createTray();
   createWindow();
   const timeLimitInterval = setInterval(checkTimeLimits, 3e4);
   setTimeout(checkTimeLimits, 5e3);
-  app3.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+  import_electron3.app.on("activate", () => {
+    if (import_electron3.BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     } else if (mainWindow) {
       mainWindow.show();
     }
   });
-  app3.on("will-quit", () => {
+  import_electron3.app.on("will-quit", () => {
     clearInterval(timeLimitInterval);
   });
 });
-app3.on("before-quit", () => {
+import_electron3.app.on("before-quit", () => {
   isQuitting = true;
 });
-app3.on("window-all-closed", () => {
+import_electron3.app.on("window-all-closed", () => {
   if (process.platform === "darwin") {
   } else if (!settings.minimizeToTray) {
     usageTracker.dispose();
     notificationTracker.dispose();
-    app3.quit();
+    import_electron3.app.quit();
   }
 });
-app3.on("will-quit", () => {
+import_electron3.app.on("will-quit", () => {
   usageTracker.dispose();
   notificationTracker.dispose();
   if (tray) {

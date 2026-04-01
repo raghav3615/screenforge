@@ -1,4 +1,5 @@
 import type { AppInfo } from '../types/models'
+import { useI18n } from '../i18n/I18nProvider'
 import './NotificationSummary.css'
 
 interface NotificationRow {
@@ -12,21 +13,22 @@ interface NotificationSummaryProps {
 }
 
 const NotificationSummary = ({ total, rows }: NotificationSummaryProps) => {
+  const { t } = useI18n()
   const maxCount = rows.length > 0 ? Math.max(...rows.map(r => r.notifications)) : 1
 
   return (
     <div className="notification-card">
       <div className="notification-card__header">
         <div className="notification-card__title-group">
-          <h3>Notifications</h3>
+          <h3>{t('nav.notifications')}</h3>
           <span className="notification-card__badge">{total}</span>
         </div>
-        <span className="notification-card__date">Today</span>
+        <span className="notification-card__date">{t('tables.notificationToday')}</span>
       </div>
       
       <div className="notification-card__list">
         {rows.length === 0 ? (
-          <div className="notification-card__empty">No notifications yet</div>
+          <div className="notification-card__empty">{t('tables.notificationEmpty')}</div>
         ) : (
           rows.map((row) => {
             const percentage = (row.notifications / maxCount) * 100

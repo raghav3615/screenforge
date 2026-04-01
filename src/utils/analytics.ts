@@ -1,4 +1,5 @@
 import type { AppInfo, UsageEntry } from '../types/models'
+import { defaultLocale, formatDurationMinutes, formatDurationSeconds, formatRelativeDateLabel, type LocaleCode } from '../i18n/core'
 
 // Get today's date string in local timezone
 export const getTodayDateString = (): string => {
@@ -20,36 +21,15 @@ export const getDateString = (daysOffset: number = 0): string => {
 }
 
 // Format a date string for display
-export const formatDateLabel = (dateString: string): string => {
-  const today = getTodayDateString()
-  const yesterday = getDateString(-1)
-  
-  if (dateString === today) return 'Today'
-  if (dateString === yesterday) return 'Yesterday'
-  
-  const date = new Date(dateString + 'T00:00:00')
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-}
+export const formatDateLabel = (dateString: string, locale: LocaleCode = defaultLocale): string =>
+  formatRelativeDateLabel(locale, dateString)
 
-export const formatMinutes = (minutes: number) => {
-  if (minutes === 0) return '0m'
-  if (minutes < 1) return '<1m'
-  const hours = Math.floor(minutes / 60)
-  const mins = Math.round(minutes % 60)
-  if (hours === 0) return `${mins}m`
-  return `${hours}h ${mins}m`
-}
+export const formatMinutes = (minutes: number, locale: LocaleCode = defaultLocale) =>
+  formatDurationMinutes(locale, minutes)
 
 // Format seconds with more granularity for real-time display
-export const formatSeconds = (totalSeconds: number) => {
-  if (totalSeconds < 60) return `${Math.floor(totalSeconds)}s`
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = Math.floor(totalSeconds % 60)
-  if (minutes < 60) return `${minutes}m ${seconds}s`
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  return `${hours}h ${mins}m`
-}
+export const formatSeconds = (totalSeconds: number, locale: LocaleCode = defaultLocale) =>
+  formatDurationSeconds(locale, totalSeconds)
 
 export const getTotalMinutes = (entries: UsageEntry[]) =>
   entries.reduce((sum, entry) => sum + entry.minutes, 0)

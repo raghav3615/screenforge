@@ -1,4 +1,5 @@
 import type { SuggestionItem } from '../types/models'
+import { useI18n } from '../i18n/I18nProvider'
 import './SuggestionPanel.css'
 
 interface SuggestionPanelProps {
@@ -6,11 +7,13 @@ interface SuggestionPanelProps {
 }
 
 const SuggestionPanel = ({ items }: SuggestionPanelProps) => {
+  const { t } = useI18n()
+
   return (
     <div className="suggestion-card">
       <div>
-        <h3>Suggestions</h3>
-        <p>Based on your recent activity</p>
+        <h3>{t('suggestions.title')}</h3>
+        <p>{t('suggestions.subtitle')}</p>
       </div>
       <div className="suggestion-card__list">
         {items.map((item) => (

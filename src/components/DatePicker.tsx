@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { getTodayDateString, formatDateLabel } from '../utils/analytics'
+import { getTodayDateString } from '../utils/analytics'
+import { useI18n } from '../i18n/I18nProvider'
 import './DatePicker.css'
 
 interface DatePickerProps {
@@ -9,6 +10,7 @@ interface DatePickerProps {
 }
 
 const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps) => {
+  const { formatDate, formatDateLabel, formatMonthLabel, t } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
   const [viewMonth, setViewMonth] = useState<Date>(() => {
     // Start with the selected date's month
@@ -43,8 +45,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
     }
   }, [availableDates])
 
-  // Check if a date has data
-  const hasData = (dateStr: string) => availableDates.includes(dateStr)
+  const availableDateSet = useMemo(() => new Set(availableDates), [availableDates])
 
   // Get days for the current view month
   const calendarDays = useMemo(() => {
@@ -82,7 +83,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
         date: d,
         dateStr,
         isCurrentMonth: d.getMonth() === month,
-        hasData: hasData(dateStr),
+        hasData: availableDateSet.has(dateStr),
         isToday: dateStr === today,
         isSelected: dateStr === selectedDate,
         isFuture: d > todayDate,
@@ -90,7 +91,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
     }
 
     return days
-  }, [viewMonth, availableDates, selectedDate])
+  }, [availableDateSet, selectedDate, viewMonth])
 
   const goToPrevMonth = () => {
     setViewMonth(prev => {
@@ -115,7 +116,15 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
     setIsOpen(false)
   }
 
-  const monthLabel = viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const monthLabel = formatMonthLabel(viewMonth)
+  const weekdayLabels = useMemo(() => {
+    const sunday = new Date('2024-03-03T00:00:00')
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(sunday)
+      date.setDate(sunday.getDate() + index)
+      return formatDate(date, { weekday: 'short' })
+    })
+  }, [formatDate])
 
   return (
     <div className="datepicker" ref={containerRef}>
@@ -140,7 +149,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
               className="datepicker__nav" 
               onClick={goToPrevMonth}
               type="button"
-              aria-label="Previous month"
+              aria-label={t('datePicker.previousMonth')}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="15 18 9 12 15 6" />
@@ -151,7 +160,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
               className="datepicker__nav" 
               onClick={goToNextMonth}
               type="button"
-              aria-label="Next month"
+              aria-label={t('datePicker.nextMonth')}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="9 18 15 12 9 6" />
@@ -160,7 +169,7 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
           </div>
 
           <div className="datepicker__weekdays">
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+            {weekdayLabels.map(day => (
               <div key={day} className="datepicker__weekday">{day}</div>
             ))}
           </div>
@@ -190,11 +199,14 @@ const DatePicker = ({ selectedDate, availableDates, onChange }: DatePickerProps)
             <div className="datepicker__legend">
               <span className="datepicker__legend-item">
                 <span className="datepicker__legend-dot datepicker__legend-dot--data" />
-                Data available
+                {t('datePicker.dataAvailable')}
               </span>
             </div>
             <div className="datepicker__range">
-              Data from {formatDateLabel(dataRange.earliest)} to {formatDateLabel(dataRange.latest)}
+              {t('datePicker.dataRange', {
+                start: formatDateLabel(dataRange.earliest),
+                end: formatDateLabel(dataRange.latest),
+              })}
             </div>
           </div>
         </div>

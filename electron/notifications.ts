@@ -261,7 +261,7 @@ if ($unique.Count -eq 0) {
 `
 
   try {
-    const { stdout, stderr } = await execFileAsync('powershell', [
+    const { stdout } = await execFileAsync('powershell', [
       '-NoProfile',
       '-ExecutionPolicy',
       'Bypass',
@@ -291,7 +291,7 @@ if ($unique.Count -eq 0) {
 }
 
 export const createNotificationTracker = () => {
-  let persistedData = loadPersistedData()
+  const persistedData = loadPersistedData()
   let lastError: string | undefined
   let saveTimeout: NodeJS.Timeout | null = null
 
