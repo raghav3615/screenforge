@@ -4,7 +4,6 @@ import * as fs from 'node:fs'
 import { createNotificationTracker } from './notifications'
 import { createUsageTracker } from './telemetry'
 import { defaultLocale, normalizeLocale, translate, type LocaleCode } from '../src/i18n/core'
-import { getCategoryColor } from '../src/utils/categoryColor'
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
 
@@ -57,8 +56,6 @@ interface AppSettings {
   timeLimits: AppTimeLimit[]
   timeLimitNotificationsEnabled: boolean
   language: LocaleCode
-  customCategories: string[]
-  customAppCategories: Record<string, string>
 }
 
 // Track which alerts have been shown today to avoid spam
@@ -74,8 +71,6 @@ let settings: AppSettings = {
   timeLimits: [],
   timeLimitNotificationsEnabled: true,
   language: defaultLocale,
-  customCategories: [],
-  customAppCategories: {},
 }
 
 let shownAlerts: TimeLimitAlert[] = []
@@ -90,53 +85,6 @@ const getTodayDateString = (): string => {
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
-}
-
-type UsageSnapshot = ReturnType<typeof usageTracker.getSnapshot>
-
-const normalizeCategory = (value: string) => value.trim()
-
-const sanitizeCustomCategories = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return []
-  const deduped = new Set<string>()
-  for (const item of value) {
-    if (typeof item !== 'string') continue
-    const normalized = normalizeCategory(item)
-    if (!normalized) continue
-    deduped.add(normalized)
-  }
-  return Array.from(deduped)
-}
-
-const sanitizeCustomAppCategories = (value: unknown): Record<string, string> => {
-  if (!value || typeof value !== 'object') return {}
-  const sanitized: Record<string, string> = {}
-  for (const [appId, categoryRaw] of Object.entries(value)) {
-    if (!appId.trim()) continue
-    if (typeof categoryRaw !== 'string') continue
-    const normalizedCategory = normalizeCategory(categoryRaw)
-    if (!normalizedCategory) continue
-    sanitized[appId] = normalizedCategory
-  }
-  return sanitized
-}
-
-const applyCustomCategories = (snapshot: UsageSnapshot): UsageSnapshot => {
-  if (!snapshot.apps.length) return snapshot
-  const map = settings.customAppCategories
-  if (!map || Object.keys(map).length === 0) return snapshot
-  return {
-    ...snapshot,
-    apps: snapshot.apps.map((appInfo) => {
-      const customCategory = map[appInfo.id]
-      if (!customCategory) return appInfo
-      return {
-        ...appInfo,
-        category: customCategory,
-        color: getCategoryColor(customCategory),
-      }
-    }),
-  }
 }
 
 const getSettingsPath = () => {
@@ -161,8 +109,6 @@ const loadSettings = () => {
         timeLimits: loaded.timeLimits ?? [],
         timeLimitNotificationsEnabled: loaded.timeLimitNotificationsEnabled ?? true,
         language: normalizeLocale(loaded.language),
-        customCategories: sanitizeCustomCategories(loaded.customCategories),
-        customAppCategories: sanitizeCustomAppCategories(loaded.customAppCategories),
       }
     }
   } catch {
@@ -602,10 +548,10 @@ app.whenReady().then(() => {
   loadAlerts()
 
   // IPC Handlers
-  ipcMain.handle('usage:snapshot', () => applyCustomCategories(usageTracker.getSnapshot()))
+  ipcMain.handle('usage:snapshot', () => usageTracker.getSnapshot())
   ipcMain.handle('usage:clear', () => {
     usageTracker.clearData()
-    return applyCustomCategories(usageTracker.getSnapshot())
+    return usageTracker.getSnapshot()
   })
   ipcMain.handle('theme:set', (_event, theme: ThemeName) => {
     applyThemeToWindow(theme)
@@ -633,12 +579,6 @@ app.whenReady().then(() => {
     if (newSettings.language) {
       settings.language = normalizeLocale(newSettings.language)
       updateTrayMenu()
-    }
-    if (newSettings.customCategories !== undefined) {
-      settings.customCategories = sanitizeCustomCategories(newSettings.customCategories)
-    }
-    if (newSettings.customAppCategories !== undefined) {
-      settings.customAppCategories = sanitizeCustomAppCategories(newSettings.customAppCategories)
     }
     saveSettings()
     return settings

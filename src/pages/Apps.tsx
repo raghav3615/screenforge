@@ -9,8 +9,7 @@ import {
   getTodayDateString,
   getCategoryTotals,
 } from '../utils/analytics'
-import { getCategoryColor } from '../utils/categoryColor'
-import { fetchTimeLimits, addTimeLimit, removeTimeLimit, fetchSettings, updateSettings } from '../services/usageService'
+import { fetchTimeLimits, addTimeLimit, removeTimeLimit } from '../services/usageService'
 import DatePicker from '../components/DatePicker'
 import './Apps.css'
 
@@ -28,17 +27,10 @@ const Apps = ({ snapshot }: AppsProps) => {
   const [editingLimit, setEditingLimit] = useState<string | null>(null)
   const [limitInputValue, setLimitInputValue] = useState('')
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString())
-  const [customCategories, setCustomCategories] = useState<string[]>([])
-  const [customAppCategories, setCustomAppCategories] = useState<Record<string, string>>({})
-  const [newCategoryInput, setNewCategoryInput] = useState('')
 
   // Load time limits on mount
   useEffect(() => {
-    Promise.all([fetchTimeLimits(), fetchSettings()]).then(([limits, settings]) => {
-      setTimeLimits(limits)
-      setCustomCategories(settings.customCategories ?? [])
-      setCustomAppCategories(settings.customAppCategories ?? {})
-    })
+    fetchTimeLimits().then(setTimeLimits)
   }, [])
 
   // Available dates for selection
@@ -60,27 +52,9 @@ const Apps = ({ snapshot }: AppsProps) => {
     return availableDates[0] || getTodayDateString()
   }, [availableDates, selectedDate])
 
-  const effectiveApps = useMemo(() => {
-    const apps = snapshot?.apps ?? []
-    return apps.map((app) => {
-      const customCategory = customAppCategories[app.id]
-      if (!customCategory) return app
-      return {
-        ...app,
-        category: customCategory,
-        color: getCategoryColor(customCategory),
-      }
-    })
-  }, [snapshot, customAppCategories])
-
-  const originalCategoryByAppId = useMemo(
-    () => new Map((snapshot?.apps ?? []).map((app) => [app.id, app.category])),
-    [snapshot]
-  )
-
   const runningNow = useMemo(() => {
     const items = snapshot?.runningApps ?? []
-    const appLookup = new Map(effectiveApps.map((a) => [a.id, a]))
+    const appLookup = new Map(snapshot?.apps.map((a) => [a.id, a]) ?? [])
     return [...items]
       .map((p) => ({
         ...p,
@@ -88,7 +62,7 @@ const Apps = ({ snapshot }: AppsProps) => {
       }))
       .sort((a, b) => (b.hasWindow ? 1 : 0) - (a.hasWindow ? 1 : 0) || b.count - a.count)
       .slice(0, 30)
-  }, [snapshot, effectiveApps])
+  }, [snapshot])
 
   const openApps = useMemo(() => runningNow.filter((p) => p.hasWindow), [runningNow])
   const backgroundApps = useMemo(() => runningNow.filter((p) => !p.hasWindow), [runningNow])
@@ -100,8 +74,8 @@ const Apps = ({ snapshot }: AppsProps) => {
 
     // Filter entries for selected date
     const dateEntries = getEntriesForDate(snapshot.usageEntries, activeSelectedDate)
-    const appTotals = getAppTotals(dateEntries, effectiveApps)
-    const catTotals = getCategoryTotals(dateEntries, effectiveApps)
+    const appTotals = getAppTotals(dateEntries, snapshot.apps)
+    const catTotals = getCategoryTotals(dateEntries, snapshot.apps)
     const totalSec = appTotals.reduce((s, a) => s + a.seconds, 0)
 
     // Calculate today's usage for time limit progress (always today)
@@ -136,66 +110,7 @@ const Apps = ({ snapshot }: AppsProps) => {
       categoryTotals: catTotals,
       todayUsageByApp: todayUsage,
     }
-  }, [activeSelectedDate, snapshot, effectiveApps, sortBy, search, translateCategory])
-
-  const categoryOptions = useMemo(() => {
-    const defaults = [
-      'Productivity',
-      'Education',
-      'Communication',
-      'Utilities',
-      'Browsers',
-      'Entertainment',
-      'Games',
-      'Social',
-      'System',
-      'Other',
-    ]
-    const categorySet = new Set<string>(defaults)
-    for (const app of effectiveApps) {
-      categorySet.add(app.category)
-    }
-    for (const category of customCategories) {
-      categorySet.add(category)
-    }
-    return Array.from(categorySet)
-  }, [effectiveApps, customCategories])
-
-  const handleAddCustomCategory = async () => {
-    const nextCategory = newCategoryInput.trim()
-    if (!nextCategory) return
-
-    const exists = customCategories.some((category) => category.toLowerCase() === nextCategory.toLowerCase())
-    if (exists) {
-      setNewCategoryInput('')
-      return
-    }
-
-    const updated = await updateSettings({
-      customCategories: [...customCategories, nextCategory],
-    })
-    setCustomCategories(updated.customCategories ?? [])
-    setCustomAppCategories(updated.customAppCategories ?? {})
-    setNewCategoryInput('')
-  }
-
-  const handleAppCategoryChange = async (appId: string, nextCategory: string) => {
-    const selected = nextCategory.trim()
-    const originalCategory = originalCategoryByAppId.get(appId) ?? 'Other'
-    const nextMappings = { ...customAppCategories }
-
-    if (!selected || selected === originalCategory) {
-      delete nextMappings[appId]
-    } else {
-      nextMappings[appId] = selected
-    }
-
-    const updated = await updateSettings({
-      customAppCategories: nextMappings,
-    })
-    setCustomCategories(updated.customCategories ?? [])
-    setCustomAppCategories(updated.customAppCategories ?? {})
-  }
+  }, [activeSelectedDate, snapshot, sortBy, search, translateCategory])
 
   const handleSetLimit = async (appId: string) => {
     const minutes = parseInt(limitInputValue, 10)
@@ -327,7 +242,7 @@ const Apps = ({ snapshot }: AppsProps) => {
           </div>
           <div className="time-limits-summary__list">
             {timeLimits.map((limit) => {
-              const app = effectiveApps.find((a) => a.id === limit.appId)
+              const app = snapshot?.apps.find((a) => a.id === limit.appId)
               const usedMinutes = todayUsageByApp.get(limit.appId) ?? 0
               const percentUsed = Math.min(100, Math.round((usedMinutes / limit.limitMinutes) * 100))
               const isExceeded = usedMinutes >= limit.limitMinutes
@@ -370,23 +285,6 @@ const Apps = ({ snapshot }: AppsProps) => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="apps-category-add">
-          <input
-            type="text"
-            className="apps-category-add__input"
-            placeholder={t('apps.categoryManager.newCategoryPlaceholder')}
-            value={newCategoryInput}
-            onChange={(e) => setNewCategoryInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                void handleAddCustomCategory()
-              }
-            }}
-          />
-          <button className="apps-category-add__button" onClick={() => void handleAddCustomCategory()}>
-            {t('apps.categoryManager.addCategory')}
-          </button>
-        </div>
         <div className="apps-sort">
           <span>{t('apps.controls.sortBy')}</span>
           <button className={sortBy === 'time' ? 'active' : ''} onClick={() => setSortBy('time')}>
@@ -434,8 +332,6 @@ const Apps = ({ snapshot }: AppsProps) => {
                   setLimitInputValue('')
                 }}
                 onRemoveLimit={() => handleRemoveLimit(app.id)}
-                categoryOptions={categoryOptions}
-                onCategoryChange={(nextCategory) => void handleAppCategoryChange(app.id, nextCategory)}
               />
             )
           })
@@ -459,8 +355,6 @@ interface AppCardProps {
   onSaveLimit: () => void
   onCancelEdit: () => void
   onRemoveLimit: () => void
-  categoryOptions: string[]
-  onCategoryChange: (nextCategory: string) => void
 }
 
 const AppCard = ({ 
@@ -477,8 +371,6 @@ const AppCard = ({
   onSaveLimit,
   onCancelEdit,
   onRemoveLimit,
-  categoryOptions,
-  onCategoryChange,
 }: AppCardProps) => {
   const { t, formatSeconds, translateCategory } = useI18n()
   const isExceeded = limit && todayMinutes >= limit.limitMinutes
@@ -499,21 +391,6 @@ const AppCard = ({
       </div>
       <div className="app-card__bar">
         <div className="app-card__bar-fill" style={{ width: `${percentage}%`, background: app.color }} />
-      </div>
-
-      <div className="app-card__category-editor">
-        <span className="app-card__category-label">{t('apps.controls.category')}</span>
-        <select
-          className="app-card__category-select"
-          value={app.category}
-          onChange={(e) => onCategoryChange(e.target.value)}
-        >
-          {categoryOptions.map((category) => (
-            <option key={category} value={category}>
-              {translateCategory(category)}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Time Limit Section - only show for today */}

@@ -205,7 +205,7 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
         <div className="about-info">
           <div className="about-row">
             <span>{t('settings.about.version')}</span>
-            <span>1.1.0</span>
+            <span>1.0.0</span>
           </div>
           <div className="about-row">
             <span>{t('settings.about.platform')}</span>

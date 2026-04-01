@@ -162,13 +162,6 @@ export const zhCN = {
       name: '名称',
       category: '分类',
     },
-    categoryManager: {
-      title: '自定义应用分类',
-      subtitle: '为非预设应用指定分类并添加自定义分类',
-      newCategoryPlaceholder: '输入新分类名称...',
-      addCategory: '添加分类',
-      empty: '暂无非预设应用可分类',
-    },
     empty: {
       search: '没有匹配搜索条件的应用',
       date: '{date} 暂无应用使用记录',
@@ -317,7 +310,6 @@ export const zhCN = {
     Utilities: '工具',
     Browsers: '浏览器',
     Entertainment: '娱乐',
-    Games: '游戏',
     Social: '社交',
     System: '系统',
     Other: '其他',

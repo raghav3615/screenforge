@@ -381,197 +381,53 @@ var import_electron2 = require("electron");
 var fs2 = __toESM(require("node:fs"), 1);
 var path2 = __toESM(require("node:path"), 1);
 var execFileAsync2 = (0, import_node_util2.promisify)(import_node_child_process2.execFile);
-var appCatalogGroups = [
-  {
-    category: "Productivity",
-    apps: [
-      { id: "code", name: "VS Code", color: "#35a7ff" },
-      { id: "vscode-insiders", name: "VS Code Insiders", color: "#24bfa5" },
-      { id: "visualstudio", name: "Visual Studio", color: "#7c3aed" },
-      { id: "cursor", name: "Cursor", color: "#00d4ff" },
-      { id: "pycharm", name: "PyCharm", color: "#22c55e" },
-      { id: "notion", name: "Notion", color: "#1f1f1f" },
-      { id: "notepad", name: "Notepad", color: "#a0c4ff" },
-      { id: "notepad3", name: "Notepad3", color: "#64748b" },
-      { id: "terminal", name: "Terminal", color: "#4ec9b0" },
-      { id: "gitbash", name: "Git Bash", color: "#f97316" },
-      { id: "word", name: "Microsoft Word", color: "#2b579a" },
-      { id: "excel", name: "Microsoft Excel", color: "#217346" },
-      { id: "powerpoint", name: "PowerPoint", color: "#d24726" },
-      { id: "autocad", name: "AutoCAD", color: "#ef4444" },
-      { id: "figma", name: "Figma", color: "#f24e1e" },
-      { id: "photoshop", name: "Photoshop", color: "#31a8ff" },
-      { id: "lightroom", name: "Adobe Lightroom", color: "#0ea5e9" },
-      { id: "aftereffects", name: "After Effects", color: "#6366f1" },
-      { id: "audition", name: "Adobe Audition", color: "#8b5cf6" },
-      { id: "premiere", name: "Premiere Pro", color: "#9999ff" },
-      { id: "blender", name: "Blender", color: "#f5792a" },
-      { id: "obs", name: "OBS Studio", color: "#302e2e" },
-      { id: "fontforge", name: "FontForge", color: "#64748b" },
-      { id: "github", name: "GitHub Desktop", color: "#6e5494" },
-      { id: "postman", name: "Postman", color: "#ff6c37" },
-      { id: "rider", name: "JetBrains Rider", color: "#c90f5e" },
-      { id: "intellij", name: "IntelliJ IDEA", color: "#fe315d" },
-      { id: "webstorm", name: "WebStorm", color: "#07c3f2" },
-      { id: "wps", name: "WPS Office", color: "#ef4444" },
-      { id: "typora", name: "Typora", color: "#64748b" },
-      { id: "xmind", name: "XMind", color: "#f97316" }
-    ]
-  },
-  {
-    category: "Browsers",
-    apps: [
-      { id: "msedge", name: "Microsoft Edge", color: "#4f8bff" },
-      { id: "chrome", name: "Google Chrome", color: "#f7b955" },
-      { id: "firefox", name: "Firefox", color: "#ff6611" },
-      { id: "zen", name: "Zen Browser", color: "#8b5cf6" },
-      { id: "brave", name: "Brave", color: "#fb542b" },
-      { id: "opera", name: "Opera", color: "#ff1b2d" },
-      { id: "vivaldi", name: "Vivaldi", color: "#ef3939" },
-      { id: "arc", name: "Arc", color: "#5e5ce6" },
-      { id: "qqbrowser", name: "QQ Browser", color: "#3b82f6" },
-      { id: "se360", name: "360 Secure Browser", color: "#22c55e" },
-      { id: "chrome360", name: "360 Extreme Browser", color: "#16a34a" },
-      { id: "sogou", name: "Sogou Explorer", color: "#f59e0b" }
-    ]
-  },
-  {
-    category: "Communication",
-    apps: [
-      { id: "teams", name: "Microsoft Teams", color: "#5b7cfa" },
-      { id: "outlook", name: "Outlook", color: "#2f6fff" },
-      { id: "slack", name: "Slack", color: "#e91e63" },
-      { id: "zoom", name: "Zoom", color: "#2d8cff" },
-      { id: "wechat", name: "WeChat", color: "#22c55e" },
-      { id: "qq", name: "QQ", color: "#06b6d4" },
-      { id: "dingtalk", name: "DingTalk", color: "#1677ff" },
-      { id: "feishu", name: "Feishu", color: "#14b8a6" },
-      { id: "wecom", name: "WeCom", color: "#0284c7" },
-      { id: "kook", name: "KOOK", color: "#22c55e" },
-      { id: "teamspeak", name: "TeamSpeak", color: "#3b82f6" }
-    ]
-  },
-  {
-    category: "Social",
-    apps: [
-      { id: "discord", name: "Discord", color: "#8c7dff" },
-      { id: "whatsapp", name: "WhatsApp", color: "#25d366" },
-      { id: "telegram", name: "Telegram", color: "#0088cc" }
-    ]
-  },
-  {
-    category: "Entertainment",
-    apps: [
-      { id: "spotify", name: "Spotify", color: "#2ed47a" },
-      { id: "vlc", name: "VLC", color: "#ff8c00" },
-      { id: "mpv", name: "mpv", color: "#7c3aed" },
-      { id: "youtube", name: "YouTube", color: "#ff0000" },
-      { id: "netflix", name: "Netflix", color: "#e50914" },
-      { id: "bilibili", name: "Bilibili", color: "#f472b6" },
-      { id: "douyin", name: "Douyin", color: "#111827" },
-      { id: "iqiyi", name: "iQIYI", color: "#16a34a" },
-      { id: "tencentvideo", name: "Tencent Video", color: "#10b981" },
-      { id: "youku", name: "Youku", color: "#ef4444" },
-      { id: "cloudmusic", name: "NetEase Cloud Music", color: "#dc2626" },
-      { id: "qqmusic", name: "QQ Music", color: "#22c55e" }
-    ]
-  },
-  {
-    category: "Utilities",
-    apps: [
-      { id: "explorer", name: "File Explorer", color: "#9aa0ff" },
-      { id: "localsend", name: "LocalSend", color: "#06b6d4" },
-      { id: "todesk", name: "ToDesk", color: "#0ea5e9" },
-      { id: "moonlight", name: "Moonlight", color: "#38bdf8" },
-      { id: "everything", name: "Everything", color: "#f59e0b" },
-      { id: "bandizip", name: "Bandizip", color: "#3b82f6" },
-      { id: "idm", name: "Internet Download Manager", color: "#1d4ed8" },
-      { id: "fdm", name: "Free Download Manager", color: "#0284c7" },
-      { id: "treesize", name: "TreeSize", color: "#16a34a" },
-      { id: "wisecare365", name: "Wise Care 365", color: "#2563eb" },
-      { id: "watttoolkit", name: "Watt Toolkit", color: "#06b6d4" },
-      { id: "steamtools", name: "SteamTools", color: "#334155" },
-      { id: "msi-afterburner", name: "MSI Afterburner", color: "#ef4444" },
-      { id: "handbrake", name: "HandBrake", color: "#22c55e" },
-      { id: "clash-verge", name: "Clash Verge", color: "#a855f7" },
-      { id: "xshell", name: "Xshell", color: "#f97316" },
-      { id: "xftp", name: "Xftp", color: "#fb923c" },
-      { id: "baidunetdisk", name: "Baidu Netdisk", color: "#2563eb" },
-      { id: "xunlei", name: "Xunlei", color: "#eab308" }
-    ]
-  },
-  {
-    category: "Games",
-    apps: [
-      { id: "steam", name: "Steam", color: "#ff8b6a" },
-      { id: "epicgames", name: "Epic Games Launcher", color: "#111827" },
-      { id: "ubisoftconnect", name: "Ubisoft Connect", color: "#2563eb" },
-      { id: "eadesktop", name: "EA App", color: "#f97316" },
-      { id: "rockstar", name: "Rockstar Games Launcher", color: "#facc15" },
-      { id: "pcl", name: "PCL Launcher", color: "#0ea5e9" },
-      { id: "perfectworld", name: "Perfect World Platform", color: "#64748b" },
-      { id: "fivee", name: "5E Platform", color: "#7c3aed" },
-      { id: "leigod", name: "Leigod Booster", color: "#ef4444" },
-      { id: "uugame", name: "UU Booster", color: "#0284c7" },
-      { id: "balatro", name: "Balatro", color: "#f97316" },
-      { id: "stardewvalley", name: "Stardew Valley", color: "#84cc16" },
-      { id: "osu", name: "osu!", color: "#ec4899" },
-      { id: "deltaforce", name: "Delta Force", color: "#10b981" },
-      { id: "forzahorizon5", name: "Forza Horizon 5", color: "#f59e0b" },
-      { id: "rainbowsix", name: "Tom Clancy's Rainbow Six Siege", color: "#2563eb" },
-      { id: "warthunder", name: "War Thunder", color: "#dc2626" },
-      { id: "readyornot", name: "Ready or Not", color: "#374151" },
-      { id: "houseflipper2", name: "House Flipper 2", color: "#0ea5e9" },
-      { id: "eurotruck2", name: "Euro Truck Simulator 2", color: "#475569" },
-      { id: "coffeetalk", name: "Coffee Talk", color: "#a16207" }
-    ]
-  }
+var appCatalog = [
+  { id: "code", name: "VS Code", category: "Productivity", color: "#35a7ff" },
+  // Browsers
+  { id: "msedge", name: "Microsoft Edge", category: "Browsers", color: "#4f8bff" },
+  { id: "chrome", name: "Google Chrome", category: "Browsers", color: "#f7b955" },
+  { id: "firefox", name: "Firefox", category: "Browsers", color: "#ff6611" },
+  { id: "zen", name: "Zen Browser", category: "Browsers", color: "#8b5cf6" },
+  { id: "brave", name: "Brave", category: "Browsers", color: "#fb542b" },
+  { id: "opera", name: "Opera", category: "Browsers", color: "#ff1b2d" },
+  { id: "vivaldi", name: "Vivaldi", category: "Browsers", color: "#ef3939" },
+  { id: "arc", name: "Arc", category: "Browsers", color: "#5e5ce6" },
+  { id: "discord", name: "Discord", category: "Social", color: "#8c7dff" },
+  { id: "spotify", name: "Spotify", category: "Entertainment", color: "#2ed47a" },
+  { id: "steam", name: "Steam", category: "Entertainment", color: "#ff8b6a" },
+  { id: "teams", name: "Microsoft Teams", category: "Communication", color: "#5b7cfa" },
+  { id: "outlook", name: "Outlook", category: "Communication", color: "#2f6fff" },
+  { id: "explorer", name: "File Explorer", category: "Utilities", color: "#9aa0ff" },
+  { id: "notepad", name: "Notepad", category: "Productivity", color: "#a0c4ff" },
+  { id: "terminal", name: "Terminal", category: "Productivity", color: "#4ec9b0" },
+  { id: "slack", name: "Slack", category: "Communication", color: "#e91e63" },
+  { id: "zoom", name: "Zoom", category: "Communication", color: "#2d8cff" },
+  { id: "notion", name: "Notion", category: "Productivity", color: "#1f1f1f" },
+  { id: "word", name: "Microsoft Word", category: "Productivity", color: "#2b579a" },
+  { id: "excel", name: "Microsoft Excel", category: "Productivity", color: "#217346" },
+  { id: "powerpoint", name: "PowerPoint", category: "Productivity", color: "#d24726" },
+  { id: "vlc", name: "VLC", category: "Entertainment", color: "#ff8c00" },
+  { id: "obs", name: "OBS Studio", category: "Productivity", color: "#302e2e" },
+  { id: "figma", name: "Figma", category: "Productivity", color: "#f24e1e" },
+  { id: "photoshop", name: "Photoshop", category: "Productivity", color: "#31a8ff" },
+  { id: "premiere", name: "Premiere Pro", category: "Productivity", color: "#9999ff" },
+  { id: "blender", name: "Blender", category: "Productivity", color: "#f5792a" },
+  { id: "vscode-insiders", name: "VS Code Insiders", category: "Productivity", color: "#24bfa5" },
+  { id: "cursor", name: "Cursor", category: "Productivity", color: "#00d4ff" },
+  { id: "whatsapp", name: "WhatsApp", category: "Social", color: "#25d366" },
+  { id: "telegram", name: "Telegram", category: "Social", color: "#0088cc" },
+  { id: "youtube", name: "YouTube", category: "Entertainment", color: "#ff0000" },
+  { id: "netflix", name: "Netflix", category: "Entertainment", color: "#e50914" },
+  { id: "github", name: "GitHub Desktop", category: "Productivity", color: "#6e5494" },
+  { id: "postman", name: "Postman", category: "Productivity", color: "#ff6c37" },
+  { id: "rider", name: "JetBrains Rider", category: "Productivity", color: "#c90f5e" },
+  { id: "intellij", name: "IntelliJ IDEA", category: "Productivity", color: "#fe315d" },
+  { id: "webstorm", name: "WebStorm", category: "Productivity", color: "#07c3f2" }
 ];
-var appCatalog = appCatalogGroups.flatMap(
-  ({ category, apps }) => apps.map((app4) => ({ ...app4, category }))
-);
 var processPatterns = [
-  // Productivity
   { pattern: /^code$/i, appId: "code" },
   { pattern: /^code - insiders$/i, appId: "vscode-insiders" },
-  { pattern: /^devenv$/i, appId: "visualstudio" },
   { pattern: /^cursor$/i, appId: "cursor" },
-  { pattern: /^pycharm64$/i, appId: "pycharm" },
-  { pattern: /^pycharm$/i, appId: "pycharm" },
-  { pattern: /^notepad$/i, appId: "notepad" },
-  { pattern: /^notepad3$/i, appId: "notepad3" },
-  { pattern: /^notepad\+\+$/i, appId: "notepad" },
-  { pattern: /^windowsterminal$/i, appId: "terminal" },
-  { pattern: /^wt$/i, appId: "terminal" },
-  { pattern: /^powershell$/i, appId: "terminal" },
-  { pattern: /^cmd$/i, appId: "terminal" },
-  { pattern: /^git-bash$/i, appId: "gitbash" },
-  { pattern: /^notion$/i, appId: "notion" },
-  { pattern: /^winword$/i, appId: "word" },
-  { pattern: /^excel$/i, appId: "excel" },
-  { pattern: /^powerpnt$/i, appId: "powerpoint" },
-  { pattern: /^acad$/i, appId: "autocad" },
-  { pattern: /^obs64$/i, appId: "obs" },
-  { pattern: /^obs$/i, appId: "obs" },
-  { pattern: /^figma$/i, appId: "figma" },
-  { pattern: /^photoshop$/i, appId: "photoshop" },
-  { pattern: /^lightroomclassic$/i, appId: "lightroom" },
-  { pattern: /^afterfx$/i, appId: "aftereffects" },
-  { pattern: /^adobe audition/i, appId: "audition" },
-  { pattern: /^audition$/i, appId: "audition" },
-  { pattern: /^premiere/i, appId: "premiere" },
-  { pattern: /^blender$/i, appId: "blender" },
-  { pattern: /^fontforge$/i, appId: "fontforge" },
-  { pattern: /^githubdesktop$/i, appId: "github" },
-  { pattern: /^postman$/i, appId: "postman" },
-  { pattern: /^rider64$/i, appId: "rider" },
-  { pattern: /^idea64$/i, appId: "intellij" },
-  { pattern: /^webstorm64$/i, appId: "webstorm" },
-  { pattern: /^wps$/i, appId: "wps" },
-  { pattern: /^et$/i, appId: "wps" },
-  { pattern: /^wpp$/i, appId: "wps" },
-  { pattern: /^typora$/i, appId: "typora" },
-  { pattern: /^xmind$/i, appId: "xmind" },
   // Browsers
   { pattern: /^msedge$/i, appId: "msedge" },
   { pattern: /^chrome$/i, appId: "chrome" },
@@ -581,91 +437,40 @@ var processPatterns = [
   { pattern: /^opera$/i, appId: "opera" },
   { pattern: /^vivaldi$/i, appId: "vivaldi" },
   { pattern: /^arc$/i, appId: "arc" },
-  { pattern: /^qqbrowser$/i, appId: "qqbrowser" },
-  { pattern: /^360se$/i, appId: "se360" },
-  { pattern: /^360chrome$/i, appId: "chrome360" },
-  { pattern: /^sogouexplorer$/i, appId: "sogou" },
-  // Communication
+  { pattern: /^discord$/i, appId: "discord" },
+  { pattern: /^spotify$/i, appId: "spotify" },
+  { pattern: /^steam$/i, appId: "steam" },
   { pattern: /^teams$/i, appId: "teams" },
   { pattern: /^ms-teams$/i, appId: "teams" },
   { pattern: /^outlook$/i, appId: "outlook" },
+  { pattern: /^explorer$/i, appId: "explorer" },
+  { pattern: /^notepad$/i, appId: "notepad" },
+  { pattern: /^notepad\+\+$/i, appId: "notepad" },
+  { pattern: /^windowsterminal$/i, appId: "terminal" },
+  { pattern: /^wt$/i, appId: "terminal" },
+  { pattern: /^powershell$/i, appId: "terminal" },
+  { pattern: /^cmd$/i, appId: "terminal" },
   { pattern: /^slack$/i, appId: "slack" },
   { pattern: /^zoom$/i, appId: "zoom" },
-  { pattern: /^wechat$/i, appId: "wechat" },
-  { pattern: /^qq$/i, appId: "qq" },
-  { pattern: /^dingtalk$/i, appId: "dingtalk" },
-  { pattern: /^feishu$/i, appId: "feishu" },
-  { pattern: /^lark$/i, appId: "feishu" },
-  { pattern: /^wxwork$/i, appId: "wecom" },
-  { pattern: /^wecom$/i, appId: "wecom" },
-  { pattern: /^kook$/i, appId: "kook" },
-  { pattern: /^ts3client$/i, appId: "teamspeak" },
-  { pattern: /^teamspeak$/i, appId: "teamspeak" },
-  // Social
-  { pattern: /^discord$/i, appId: "discord" },
+  { pattern: /^notion$/i, appId: "notion" },
+  { pattern: /^winword$/i, appId: "word" },
+  { pattern: /^excel$/i, appId: "excel" },
+  { pattern: /^powerpnt$/i, appId: "powerpoint" },
+  { pattern: /^vlc$/i, appId: "vlc" },
+  { pattern: /^obs64$/i, appId: "obs" },
+  { pattern: /^obs$/i, appId: "obs" },
+  { pattern: /^figma$/i, appId: "figma" },
+  { pattern: /^photoshop$/i, appId: "photoshop" },
+  { pattern: /^premiere/i, appId: "premiere" },
+  { pattern: /^blender$/i, appId: "blender" },
   { pattern: /^whatsapp\.root$/i, appId: "whatsapp" },
   { pattern: /^whatsapp$/i, appId: "whatsapp" },
   { pattern: /^telegram$/i, appId: "telegram" },
-  // Entertainment
-  { pattern: /^spotify$/i, appId: "spotify" },
-  { pattern: /^vlc$/i, appId: "vlc" },
-  { pattern: /^mpv$/i, appId: "mpv" },
-  { pattern: /^bilibili$/i, appId: "bilibili" },
-  { pattern: /^douyin$/i, appId: "douyin" },
-  { pattern: /^iqiyi$/i, appId: "iqiyi" },
-  { pattern: /^qqlive$/i, appId: "tencentvideo" },
-  { pattern: /^youku$/i, appId: "youku" },
-  { pattern: /^cloudmusic$/i, appId: "cloudmusic" },
-  { pattern: /^qqmusic$/i, appId: "qqmusic" },
-  // Utilities
-  { pattern: /^explorer$/i, appId: "explorer" },
-  { pattern: /^localsend$/i, appId: "localsend" },
-  { pattern: /^todesk$/i, appId: "todesk" },
-  { pattern: /^moonlight$/i, appId: "moonlight" },
-  { pattern: /^everything$/i, appId: "everything" },
-  { pattern: /^bandizip$/i, appId: "bandizip" },
-  { pattern: /^idman$/i, appId: "idm" },
-  { pattern: /^fdm$/i, appId: "fdm" },
-  { pattern: /^treesize$/i, appId: "treesize" },
-  { pattern: /^wisecare365$/i, appId: "wisecare365" },
-  { pattern: /^watttoolkit$/i, appId: "watttoolkit" },
-  { pattern: /^steamtools$/i, appId: "steamtools" },
-  { pattern: /^msiafterburner$/i, appId: "msi-afterburner" },
-  { pattern: /^handbrake$/i, appId: "handbrake" },
-  { pattern: /^clash-verge$/i, appId: "clash-verge" },
-  { pattern: /^clashverge$/i, appId: "clash-verge" },
-  { pattern: /^xshell$/i, appId: "xshell" },
-  { pattern: /^xftp$/i, appId: "xftp" },
-  { pattern: /^baidunetdisk$/i, appId: "baidunetdisk" },
-  { pattern: /^xunlei$/i, appId: "xunlei" },
-  // Games
-  { pattern: /^steam$/i, appId: "steam" },
-  { pattern: /^steamwebhelper$/i, appId: "steam" },
-  { pattern: /^epicgameslauncher$/i, appId: "epicgames" },
-  { pattern: /^ubisoftconnect$/i, appId: "ubisoftconnect" },
-  { pattern: /^eadesktop$/i, appId: "eadesktop" },
-  { pattern: /^rockstar.*launcher$/i, appId: "rockstar" },
-  { pattern: /^pcl2$/i, appId: "pcl" },
-  { pattern: /^pcl$/i, appId: "pcl" },
-  { pattern: /^perfectworld.*platform$/i, appId: "perfectworld" },
-  { pattern: /^5eclient$/i, appId: "fivee" },
-  { pattern: /^leigod$/i, appId: "leigod" },
-  { pattern: /^uu$/i, appId: "uugame" },
-  { pattern: /^uugamebooster$/i, appId: "uugame" },
-  { pattern: /^balatro$/i, appId: "balatro" },
-  { pattern: /^stardew valley$/i, appId: "stardewvalley" },
-  { pattern: /^stardewvalley$/i, appId: "stardewvalley" },
-  { pattern: /^osu!?$/i, appId: "osu" },
-  { pattern: /^delta.*force/i, appId: "deltaforce" },
-  { pattern: /^forzahorizon5$/i, appId: "forzahorizon5" },
-  { pattern: /^rainbowsix$/i, appId: "rainbowsix" },
-  { pattern: /^rainbow.*six/i, appId: "rainbowsix" },
-  { pattern: /^aces$/i, appId: "warthunder" },
-  { pattern: /^warthunder$/i, appId: "warthunder" },
-  { pattern: /^readyornot/i, appId: "readyornot" },
-  { pattern: /^houseflipper2$/i, appId: "houseflipper2" },
-  { pattern: /^eurotrucks2$/i, appId: "eurotruck2" },
-  { pattern: /^coffeetalk$/i, appId: "coffeetalk" }
+  { pattern: /^githubdesktop$/i, appId: "github" },
+  { pattern: /^postman$/i, appId: "postman" },
+  { pattern: /^rider64$/i, appId: "rider" },
+  { pattern: /^idea64$/i, appId: "intellij" },
+  { pattern: /^webstorm64$/i, appId: "webstorm" }
 ];
 var unknownApp = {
   id: "other",
@@ -842,16 +647,6 @@ var createUsageTracker = () => {
     appLookup.set(app4.id, app4);
   }
   appLookup.set(unknownApp.id, unknownApp);
-  const ensureDynamicAppInfo = (appId, nameHint) => {
-    if (!appId || appLookup.has(appId)) return;
-    const rawName = nameHint ?? (appId.startsWith("proc:") ? appId.slice(5) : appId);
-    appLookup.set(appId, {
-      id: appId,
-      name: toDisplayName(rawName),
-      category: "Other",
-      color: "#6b7280"
-    });
-  };
   const totals = loadPersistedData2();
   let interval = null;
   let saveInterval = null;
@@ -875,7 +670,14 @@ var createUsageTracker = () => {
     const mapped = mapProcessToAppId(active.process);
     if (mapped && appLookup.has(mapped)) return mapped;
     const dynamicId = `proc:${active.process.toLowerCase()}`;
-    ensureDynamicAppInfo(dynamicId, active.process);
+    if (!appLookup.has(dynamicId)) {
+      appLookup.set(dynamicId, {
+        id: dynamicId,
+        name: toDisplayName(active.process),
+        category: "Other",
+        color: "#6b7280"
+      });
+    }
     return dynamicId;
   };
   const resolveAppIdForRunningApps = (processName) => {
@@ -887,7 +689,14 @@ var createUsageTracker = () => {
     const mapped = mapProcessToAppId(processName);
     if (mapped && appLookup.has(mapped)) return mapped;
     const dynamicId = `proc:${processName.toLowerCase()}`;
-    ensureDynamicAppInfo(dynamicId, processName);
+    if (!appLookup.has(dynamicId)) {
+      appLookup.set(dynamicId, {
+        id: dynamicId,
+        name: toDisplayName(processName),
+        category: "Other",
+        color: "#6b7280"
+      });
+    }
     return dynamicId;
   };
   const refreshRunningApps = async () => {
@@ -929,7 +738,6 @@ var createUsageTracker = () => {
         const date = key.slice(0, firstColonIndex);
         const appId = key.slice(firstColonIndex + 1);
         if (!appId) continue;
-        ensureDynamicAppInfo(appId);
         usedAppIds.add(appId);
         entries.push({
           date,
@@ -1128,13 +936,6 @@ var enUS = {
       name: "Name",
       category: "Category"
     },
-    categoryManager: {
-      title: "Custom App Categories",
-      subtitle: "Assign categories to non-preset apps and add your own categories",
-      newCategoryPlaceholder: "Enter a new category...",
-      addCategory: "Add Category",
-      empty: "No non-preset apps available yet"
-    },
     empty: {
       search: "No apps match your search",
       date: "No apps tracked for {date}"
@@ -1283,7 +1084,6 @@ var enUS = {
     Utilities: "Utilities",
     Browsers: "Browsers",
     Entertainment: "Entertainment",
-    Games: "Games",
     Social: "Social",
     System: "System",
     Other: "Other",
@@ -1454,13 +1254,6 @@ var zhCN = {
       name: "\u540D\u79F0",
       category: "\u5206\u7C7B"
     },
-    categoryManager: {
-      title: "\u81EA\u5B9A\u4E49\u5E94\u7528\u5206\u7C7B",
-      subtitle: "\u4E3A\u975E\u9884\u8BBE\u5E94\u7528\u6307\u5B9A\u5206\u7C7B\u5E76\u6DFB\u52A0\u81EA\u5B9A\u4E49\u5206\u7C7B",
-      newCategoryPlaceholder: "\u8F93\u5165\u65B0\u5206\u7C7B\u540D\u79F0...",
-      addCategory: "\u6DFB\u52A0\u5206\u7C7B",
-      empty: "\u6682\u65E0\u975E\u9884\u8BBE\u5E94\u7528\u53EF\u5206\u7C7B"
-    },
     empty: {
       search: "\u6CA1\u6709\u5339\u914D\u641C\u7D22\u6761\u4EF6\u7684\u5E94\u7528",
       date: "{date} \u6682\u65E0\u5E94\u7528\u4F7F\u7528\u8BB0\u5F55"
@@ -1609,7 +1402,6 @@ var zhCN = {
     Utilities: "\u5DE5\u5177",
     Browsers: "\u6D4F\u89C8\u5668",
     Entertainment: "\u5A31\u4E50",
-    Games: "\u6E38\u620F",
     Social: "\u793E\u4EA4",
     System: "\u7CFB\u7EDF",
     Other: "\u5176\u4ED6",
@@ -1652,36 +1444,6 @@ var translate = (locale, key, params) => {
   return interpolate(template, params);
 };
 
-// src/utils/categoryColor.ts
-var CATEGORY_COLORS = {
-  Productivity: "#3b82f6",
-  Education: "#0ea5e9",
-  Communication: "#06b6d4",
-  Utilities: "#8b5cf6",
-  Browsers: "#f59e0b",
-  Entertainment: "#22c55e",
-  Games: "#ef4444",
-  Social: "#ec4899",
-  System: "#64748b",
-  Other: "#6b7280",
-  Unknown: "#6b7280"
-};
-var hashString = (value) => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-};
-var getCategoryColor = (category) => {
-  const normalized = category.trim();
-  const preset = CATEGORY_COLORS[normalized];
-  if (preset) return preset;
-  const hue = hashString(normalized || "Other") % 360;
-  return `hsl(${hue}, 65%, 55%)`;
-};
-
 // electron/main.ts
 var isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 var usageTracker = createUsageTracker();
@@ -1715,9 +1477,7 @@ var settings = {
   startWithWindows: false,
   timeLimits: [],
   timeLimitNotificationsEnabled: true,
-  language: defaultLocale,
-  customCategories: [],
-  customAppCategories: {}
+  language: defaultLocale
 };
 var shownAlerts = [];
 var mt = (key, params) => translate(settings.language, key, params);
@@ -1727,47 +1487,6 @@ var getTodayDateString3 = () => {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-};
-var normalizeCategory = (value) => value.trim();
-var sanitizeCustomCategories = (value) => {
-  if (!Array.isArray(value)) return [];
-  const deduped = /* @__PURE__ */ new Set();
-  for (const item of value) {
-    if (typeof item !== "string") continue;
-    const normalized = normalizeCategory(item);
-    if (!normalized) continue;
-    deduped.add(normalized);
-  }
-  return Array.from(deduped);
-};
-var sanitizeCustomAppCategories = (value) => {
-  if (!value || typeof value !== "object") return {};
-  const sanitized = {};
-  for (const [appId, categoryRaw] of Object.entries(value)) {
-    if (!appId.trim()) continue;
-    if (typeof categoryRaw !== "string") continue;
-    const normalizedCategory = normalizeCategory(categoryRaw);
-    if (!normalizedCategory) continue;
-    sanitized[appId] = normalizedCategory;
-  }
-  return sanitized;
-};
-var applyCustomCategories = (snapshot) => {
-  if (!snapshot.apps.length) return snapshot;
-  const map = settings.customAppCategories;
-  if (!map || Object.keys(map).length === 0) return snapshot;
-  return {
-    ...snapshot,
-    apps: snapshot.apps.map((appInfo) => {
-      const customCategory = map[appInfo.id];
-      if (!customCategory) return appInfo;
-      return {
-        ...appInfo,
-        category: customCategory,
-        color: getCategoryColor(customCategory)
-      };
-    })
-  };
 };
 var getSettingsPath = () => {
   const userDataPath = import_electron3.app.getPath("userData");
@@ -1788,9 +1507,7 @@ var loadSettings = () => {
         startWithWindows: loaded.startWithWindows ?? false,
         timeLimits: loaded.timeLimits ?? [],
         timeLimitNotificationsEnabled: loaded.timeLimitNotificationsEnabled ?? true,
-        language: normalizeLocale(loaded.language),
-        customCategories: sanitizeCustomCategories(loaded.customCategories),
-        customAppCategories: sanitizeCustomAppCategories(loaded.customAppCategories)
+        language: normalizeLocale(loaded.language)
       };
     }
   } catch {
@@ -2150,10 +1867,10 @@ var setAutoLaunch = (enable) => {
 import_electron3.app.whenReady().then(() => {
   loadSettings();
   loadAlerts();
-  import_electron3.ipcMain.handle("usage:snapshot", () => applyCustomCategories(usageTracker.getSnapshot()));
+  import_electron3.ipcMain.handle("usage:snapshot", () => usageTracker.getSnapshot());
   import_electron3.ipcMain.handle("usage:clear", () => {
     usageTracker.clearData();
-    return applyCustomCategories(usageTracker.getSnapshot());
+    return usageTracker.getSnapshot();
   });
   import_electron3.ipcMain.handle("theme:set", (_event, theme) => {
     applyThemeToWindow(theme);
@@ -2179,12 +1896,6 @@ import_electron3.app.whenReady().then(() => {
     if (newSettings.language) {
       settings.language = normalizeLocale(newSettings.language);
       updateTrayMenu();
-    }
-    if (newSettings.customCategories !== void 0) {
-      settings.customCategories = sanitizeCustomCategories(newSettings.customCategories);
-    }
-    if (newSettings.customAppCategories !== void 0) {
-      settings.customAppCategories = sanitizeCustomAppCategories(newSettings.customAppCategories);
     }
     saveSettings();
     return settings;
