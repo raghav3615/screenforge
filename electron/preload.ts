@@ -1,6 +1,5 @@
-import * as electron from 'electron'
-
-const { contextBridge, ipcRenderer } = electron
+import { contextBridge, ipcRenderer } from 'electron'
+import type { IpcRendererEvent } from 'electron'
 
 // Time limit interface
 interface AppTimeLimit {
@@ -15,6 +14,7 @@ interface AppSettings {
   startWithWindows: boolean
   timeLimits: AppTimeLimit[]
   timeLimitNotificationsEnabled: boolean
+  language: 'zh-CN' | 'en-US'
 }
 
 const api = {
@@ -80,6 +80,7 @@ const api = {
         startWithWindows: false,
         timeLimits: [],
         timeLimitNotificationsEnabled: true,
+        language: 'zh-CN',
       }
     }
   },
@@ -92,6 +93,7 @@ const api = {
         startWithWindows: false,
         timeLimits: [],
         timeLimitNotificationsEnabled: true,
+        language: 'zh-CN',
       }
     }
   },
@@ -133,7 +135,7 @@ const api = {
   },
   // Event listeners
   onTimeLimitExceeded: (callback: (data: { appId: string; appName: string; usedMinutes: number; limitMinutes: number }) => void) => {
-    const handler = (_event: electron.IpcRendererEvent, data: { appId: string; appName: string; usedMinutes: number; limitMinutes: number }) => {
+    const handler = (_event: IpcRendererEvent, data: { appId: string; appName: string; usedMinutes: number; limitMinutes: number }) => {
       callback(data)
     }
     ipcRenderer.on('time-limit-exceeded', handler)

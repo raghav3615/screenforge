@@ -17,9 +17,8 @@ import NotificationSummary from '../components/NotificationSummary'
 import SuggestionPanel from '../components/SuggestionPanel'
 import type { ThemeName, SuggestionItem, NotificationSummary as NotifSummaryType, AppInfo } from '../types/models'
 import type { UsageSnapshot } from '../services/usageService'
+import { useI18n } from '../i18n/I18nProvider'
 import {
-  formatMinutes,
-  formatSeconds,
   getAppTotals,
   getCategoryTotals,
   getDailyTotals,
@@ -110,6 +109,7 @@ const buildFallbackApp = (appId: string): AppInfo => {
 }
 
 const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: DashboardProps) => {
+  const { t, formatMinutes, formatSeconds, formatDate, translateCategory } = useI18n()
   const { 
     dailyTotals, 
     todaySeconds,
@@ -181,8 +181,8 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
     }, [snapshot, notificationSummary])
 
   const activeAppName = snapshot?.activeAppId
-    ? snapshot.apps.find((app) => app.id === snapshot.activeAppId)?.name ?? 'Other apps'
-    : 'No active app'
+    ? snapshot.apps.find((app) => app.id === snapshot.activeAppId)?.name ?? t('dashboard.sections.otherApps')
+    : t('dashboard.sections.noActiveApp')
 
   // Get currently running apps with windows (active apps)
   const activeApps = useMemo(() => {
@@ -198,7 +198,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
   }, [snapshot])
 
   const chartLabels = dailyTotals.map((entry) =>
-    new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    formatDate(`${entry.date}T00:00:00`, { month: 'short', day: 'numeric' }),
   )
 
   const axisColor =
@@ -210,7 +210,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
     labels: chartLabels,
     datasets: [
       {
-        label: 'Usage (minutes)',
+        label: t('dashboard.charts.usageDataset'),
         data: dailyTotals.map((entry) => entry.minutes),
         borderColor: 'rgba(79, 139, 255, 0.9)',
         backgroundColor: 'rgba(79, 139, 255, 0.15)',
@@ -222,10 +222,10 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
   }
 
   const categoryChartData = {
-    labels: todayCategoryTotals.map((row) => row.category),
+    labels: todayCategoryTotals.map((row) => translateCategory(row.category)),
     datasets: [
       {
-        label: 'Minutes',
+        label: t('dashboard.charts.minutesDataset'),
         data: todayCategoryTotals.map((row) => row.minutes),
         backgroundColor: ['#4f8bff', '#8c7dff', '#2ed47a', '#ff8b6a', '#f7b955'],
         borderRadius: 12,
@@ -237,31 +237,35 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
     <>
       <header className="topbar">
         <div>
-          <div className="topbar__title">{getGreeting()}</div>
-          <div className="topbar__subtitle">Your screen time for today</div>
+          <div className="topbar__title">{getGreeting(t)}</div>
+          <div className="topbar__subtitle">{t('dashboard.subtitle')}</div>
         </div>
       </header>
 
       <section className="stats-grid">
         <StatCard 
-          label="Screen Time" 
+          label={t('dashboard.cards.screenTime')} 
           value={formatSeconds(todaySeconds)} 
-          sub="Total today" 
+          sub={t('dashboard.cards.totalToday')} 
         />
         <StatCard 
-          label="Daily Avg" 
+          label={t('dashboard.cards.dailyAverage')} 
           value={formatMinutes(dailyAvgMinutes)} 
-          sub={dailyTotals.length > 0 ? `Across ${dailyTotals.length} days` : 'No history yet'}
+          sub={dailyTotals.length > 0
+            ? t('dashboard.cards.acrossDays', { count: dailyTotals.length })
+            : t('dashboard.cards.noHistory')}
         />
         <StatCard 
-          label="Top Category" 
-          value={todayCategoryTotals[0]?.category ?? 'None'} 
-          sub={todayCategoryTotals[0] ? formatMinutes(todayCategoryTotals[0].minutes) : 'No data'} 
+          label={t('dashboard.cards.topCategory')} 
+          value={todayCategoryTotals[0] ? translateCategory(todayCategoryTotals[0].category) : t('common.none')} 
+          sub={todayCategoryTotals[0] ? formatMinutes(todayCategoryTotals[0].minutes) : t('common.noData')} 
         />
         <StatCard
-          label="Notifications"
+          label={t('dashboard.cards.notifications')}
           value={notificationSummary ? `${notificationSummary.total}` : '0'}
-          sub={notificationRows[0] ? `Top: ${notificationRows[0].app.name}` : 'Today'}
+          sub={notificationRows[0]
+            ? t('dashboard.cards.topNotificationApp', { name: notificationRows[0].app.name })
+            : t('common.today')}
           accent="var(--accent)"
         />
       </section>
@@ -270,10 +274,10 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
         <div className="card chart-card">
           <div className="card__header">
             <div>
-              <h3>Daily usage</h3>
-              <p>Minutes per day across all apps</p>
+              <h3>{t('dashboard.charts.dailyUsageTitle')}</h3>
+              <p>{t('dashboard.charts.dailyUsageSubtitle')}</p>
             </div>
-            <span className="chip">{getTrendLabel(dailyTotals)}</span>
+            <span className="chip">{getTrendLabel(dailyTotals, t)}</span>
           </div>
           {dailyTotals.length > 0 ? (
             <Line
@@ -290,17 +294,17 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
               }}
             />
           ) : (
-            <div className="chart-empty">Start using apps to see your usage data</div>
+            <div className="chart-empty">{t('dashboard.charts.dailyUsageEmpty')}</div>
           )}
         </div>
 
         <div className="card chart-card">
           <div className="card__header">
             <div>
-              <h3>Categories</h3>
-              <p>Time by category today</p>
+              <h3>{t('dashboard.charts.categoriesTitle')}</h3>
+              <p>{t('dashboard.charts.categoriesSubtitle')}</p>
             </div>
-            <span className="chip">Today</span>
+            <span className="chip">{t('common.today')}</span>
           </div>
           {todayCategoryTotals.length > 0 ? (
             <Bar
@@ -317,23 +321,23 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
               }}
             />
           ) : (
-            <div className="chart-empty">No category data yet</div>
+            <div className="chart-empty">{t('dashboard.charts.categoriesEmpty')}</div>
           )}
         </div>
       </section>
 
       <section className="grid grid--two">
-        <AppUsageTable rows={todayAppRows.slice(0, 6)} title="Top Apps Today" />
+        <AppUsageTable rows={todayAppRows.slice(0, 6)} title={t('dashboard.sections.topAppsToday')} />
         {notificationSummary && <NotificationSummary total={notificationSummary.total} rows={notificationRows.slice(0, 6)} />}
       </section>
 
         <section className="grid grid--three">
         <SuggestionPanel items={suggestions} />
         <div className="card active-apps-card">
-            <h3>Active apps</h3>
-            <p className="active-apps-subtitle">Currently open windows</p>
+            <h3>{t('dashboard.sections.activeApps')}</h3>
+            <p className="active-apps-subtitle">{t('dashboard.sections.activeAppsSubtitle')}</p>
             {activeApps.length === 0 ? (
-              <div className="active-apps-empty">No apps with visible windows detected</div>
+              <div className="active-apps-empty">{t('dashboard.sections.activeAppsEmpty')}</div>
             ) : (
               <div className="active-apps-list">
                 {activeApps.map((app) => (
@@ -346,7 +350,7 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
                       {app.appInfo?.name ?? app.process}
                     </span>
                     {app.appId === snapshot?.activeAppId && (
-                      <span className="active-app-focus">focused</span>
+                      <span className="active-app-focus">{t('common.focused')}</span>
                     )}
                   </div>
                 ))}
@@ -357,21 +361,21 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
           <div className="session-card__header">
             <div className="session-card__status">
               <span className="session-card__dot"></span>
-              <span className="session-card__status-text">Tracking</span>
+              <span className="session-card__status-text">{t('common.tracking')}</span>
             </div>
-            <span className="chip">Live</span>
+            <span className="chip">{t('common.live')}</span>
           </div>
           <div className="session-card__info">
             <div className="session-card__row">
-              <span className="session-card__label">Current focus</span>
+              <span className="session-card__label">{t('dashboard.sections.currentFocus')}</span>
               <span className="session-card__value">{activeAppName}</span>
             </div>
             <div className="session-card__row">
-              <span className="session-card__label">Apps used today</span>
+              <span className="session-card__label">{t('dashboard.sections.appsUsedToday')}</span>
               <span className="session-card__value">{todayAppsCount}</span>
             </div>
             <div className="session-card__row">
-              <span className="session-card__label">Days recorded</span>
+              <span className="session-card__label">{t('dashboard.sections.daysRecorded')}</span>
               <span className="session-card__value">{dailyTotals.length}</span>
             </div>
           </div>
@@ -381,24 +385,24 @@ const Dashboard = ({ snapshot, suggestions, notificationSummary, theme }: Dashbo
   )
 }
 
-const getGreeting = () => {
+const getGreeting = (t: (key: string) => string) => {
   const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
+  if (hour < 12) return t('dashboard.greeting.morning')
+  if (hour < 18) return t('dashboard.greeting.afternoon')
+  return t('dashboard.greeting.evening')
 }
 
-const getTrendLabel = (dailyTotals: { minutes: number }[]) => {
-  if (dailyTotals.length < 2) return 'Collecting data'
+const getTrendLabel = (dailyTotals: { minutes: number }[], t: (key: string) => string) => {
+  if (dailyTotals.length < 2) return t('dashboard.trend.collecting')
   const recent = dailyTotals.slice(-3)
   const older = dailyTotals.slice(-6, -3)
-  if (older.length === 0) return 'New data'
+  if (older.length === 0) return t('dashboard.trend.newData')
   const recentAvg = recent.reduce((s, e) => s + e.minutes, 0) / recent.length
   const olderAvg = older.reduce((s, e) => s + e.minutes, 0) / older.length
   const diff = ((recentAvg - olderAvg) / Math.max(olderAvg, 1)) * 100
-  if (diff > 10) return 'Trending up'
-  if (diff < -10) return 'Trending down'
-  return 'Stable'
+  if (diff > 10) return t('dashboard.trend.up')
+  if (diff < -10) return t('dashboard.trend.down')
+  return t('dashboard.trend.stable')
 }
 
 export default Dashboard

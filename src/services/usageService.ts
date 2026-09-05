@@ -66,6 +66,7 @@ export const fetchSettings = async (): Promise<AppSettings> => {
     startWithWindows: false,
     timeLimits: [],
     timeLimitNotificationsEnabled: true,
+    language: 'zh-CN',
   }
 }
 
@@ -79,6 +80,7 @@ export const updateSettings = async (settings: Partial<AppSettings>): Promise<Ap
     startWithWindows: false,
     timeLimits: [],
     timeLimitNotificationsEnabled: true,
+    language: 'zh-CN',
   }
 }
 

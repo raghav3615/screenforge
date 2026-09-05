@@ -51,6 +51,7 @@ export interface AppSettings {
   startWithWindows: boolean
   timeLimits: AppTimeLimit[]
   timeLimitNotificationsEnabled: boolean
+  language: 'zh-CN' | 'en-US'
 }
 
 // Time limit alert that has been shown (to avoid duplicates)

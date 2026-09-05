@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { clearUsageData, fetchSettings, updateSettings, fetchTimeLimits } from '../services/usageService'
 import type { ThemeName, AppSettings, AppTimeLimit } from '../types/models'
+import { useI18n, type LocaleCode } from '../i18n/I18nProvider'
 import './Settings.css'
 
 interface SettingsProps {
@@ -8,14 +9,8 @@ interface SettingsProps {
   onThemeChange: (theme: ThemeName) => void
 }
 
-const themes: { id: ThemeName; name: string; description: string }[] = [
-  { id: 'dark', name: 'Dark', description: 'Easy on the eyes, perfect for night' },
-  { id: 'light', name: 'Light', description: 'Clean and bright for daytime' },
-  { id: 'tokyo', name: 'Tokyo', description: 'Cyberpunk vibes with purple accents' },
-  { id: 'skin', name: 'Skin', description: 'Warm and soft aesthetic' },
-]
-
 const Settings = ({ theme, onThemeChange }: SettingsProps) => {
+  const { locale, setLocale, localeOptions, t, translateThemeName, translateThemeDescription } = useI18n()
   const [startWithWindows, setStartWithWindows] = useState(false)
   const [minimizeToTray, setMinimizeToTray] = useState(true)
   const [timeLimitNotificationsEnabled, setTimeLimitNotificationsEnabled] = useState(true)
@@ -34,6 +29,7 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
         setMinimizeToTray(settings.minimizeToTray)
         setTimeLimitNotificationsEnabled(settings.timeLimitNotificationsEnabled)
         setTimeLimits(limits)
+        setLocale(settings.language)
       } catch {
         // Fall back to defaults
       } finally {
@@ -41,7 +37,7 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
       }
     }
     loadSettings()
-  }, [])
+  }, [setLocale])
 
   const handleSettingChange = async (key: keyof AppSettings, value: boolean) => {
     try {
@@ -54,13 +50,22 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
     }
   }
 
+  const handleLanguageChange = async (nextLanguage: LocaleCode) => {
+    setLocale(nextLanguage)
+    try {
+      await updateSettings({ language: nextLanguage })
+    } catch {
+      // Ignore errors and keep local UI language
+    }
+  }
+
   if (loading) {
     return (
       <>
         <header className="topbar">
           <div>
-            <div className="topbar__title">Settings</div>
-            <div className="topbar__subtitle">Loading...</div>
+            <div className="topbar__title">{t('settings.title')}</div>
+            <div className="topbar__subtitle">{t('settings.loadingSubtitle')}</div>
           </div>
         </header>
       </>
@@ -71,25 +76,25 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
     <>
       <header className="topbar">
         <div>
-          <div className="topbar__title">Settings</div>
-          <div className="topbar__subtitle">Customize your ScreenForge experience</div>
+          <div className="topbar__title">{t('settings.title')}</div>
+          <div className="topbar__subtitle">{t('settings.subtitle')}</div>
         </div>
       </header>
 
       <section className="settings-section">
-        <h3>Appearance</h3>
-        <p>Choose your preferred theme</p>
+        <h3>{t('settings.sections.appearance')}</h3>
+        <p>{t('settings.sections.appearanceDesc')}</p>
         <div className="theme-grid">
-          {themes.map((t) => (
+          {(['dark', 'light', 'tokyo', 'skin'] as ThemeName[]).map((themeOption) => (
             <button
-              key={t.id}
-              className={`theme-card ${theme === t.id ? 'theme-card--active' : ''}`}
-              onClick={() => onThemeChange(t.id)}
+              key={themeOption}
+              className={`theme-card ${theme === themeOption ? 'theme-card--active' : ''}`}
+              onClick={() => onThemeChange(themeOption)}
             >
-              <div className="theme-card__preview" data-theme-preview={t.id} />
+              <div className="theme-card__preview" data-theme-preview={themeOption} />
               <div className="theme-card__info">
-                <div className="theme-card__name">{t.name}</div>
-                <div className="theme-card__desc">{t.description}</div>
+                <div className="theme-card__name">{translateThemeName(themeOption)}</div>
+                <div className="theme-card__desc">{translateThemeDescription(themeOption)}</div>
               </div>
             </button>
           ))}
@@ -97,13 +102,31 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
       </section>
 
       <section className="settings-section">
-        <h3>Behavior</h3>
-        <p>Control how ScreenForge runs</p>
+        <h3>{t('settings.sections.language')}</h3>
+        <p>{t('settings.sections.languageDesc')}</p>
+        <div className="theme-grid">
+          {localeOptions.map((option) => (
+            <button
+              key={option.code}
+              className={`theme-card ${locale === option.code ? 'theme-card--active' : ''}`}
+              onClick={() => handleLanguageChange(option.code)}
+            >
+              <div className="theme-card__info">
+                <div className="theme-card__name">{option.label}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="settings-section">
+        <h3>{t('settings.sections.behavior')}</h3>
+        <p>{t('settings.sections.behaviorDesc')}</p>
         <div className="settings-list">
           <label className="setting-row">
             <div className="setting-row__info">
-              <div className="setting-row__label">Start with Windows</div>
-              <div className="setting-row__desc">Launch ScreenForge when you log in</div>
+              <div className="setting-row__label">{t('settings.behavior.startWithWindows')}</div>
+              <div className="setting-row__desc">{t('settings.behavior.startWithWindowsDesc')}</div>
             </div>
             <input
               type="checkbox"
@@ -114,8 +137,8 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
           </label>
           <label className="setting-row">
             <div className="setting-row__info">
-              <div className="setting-row__label">Minimize to tray</div>
-              <div className="setting-row__desc">Keep running in background when closed</div>
+              <div className="setting-row__label">{t('settings.behavior.minimizeToTray')}</div>
+              <div className="setting-row__desc">{t('settings.behavior.minimizeToTrayDesc')}</div>
             </div>
             <input
               type="checkbox"
@@ -128,13 +151,13 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
       </section>
 
       <section className="settings-section">
-        <h3>Time Limits</h3>
-        <p>Control app usage notifications</p>
+        <h3>{t('settings.sections.timeLimits')}</h3>
+        <p>{t('settings.sections.timeLimitsDesc')}</p>
         <div className="settings-list">
           <label className="setting-row">
             <div className="setting-row__info">
-              <div className="setting-row__label">Time limit notifications</div>
-              <div className="setting-row__desc">Get notified when you exceed app time limits</div>
+              <div className="setting-row__label">{t('settings.timeLimits.notifications')}</div>
+              <div className="setting-row__desc">{t('settings.timeLimits.notificationsDesc')}</div>
             </div>
             <input
               type="checkbox"
@@ -146,10 +169,9 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
           {timeLimits.length > 0 && (
             <div className="setting-row setting-row--info">
               <div className="setting-row__info">
-                <div className="setting-row__label">Active limits</div>
+                <div className="setting-row__label">{t('settings.timeLimits.activeLimits')}</div>
                 <div className="setting-row__desc">
-                  You have {timeLimits.length} app{timeLimits.length !== 1 ? 's' : ''} with time limits. 
-                  Manage them on the Apps page.
+                  {t('settings.timeLimits.activeLimitsDesc', { count: timeLimits.length })}
                 </div>
               </div>
             </div>
@@ -158,40 +180,40 @@ const Settings = ({ theme, onThemeChange }: SettingsProps) => {
       </section>
 
       <section className="settings-section">
-        <h3>Data</h3>
-        <p>Manage your tracked data</p>
+        <h3>{t('settings.sections.data')}</h3>
+        <p>{t('settings.sections.dataDesc')}</p>
         <div className="settings-list">
           <div className="setting-row">
             <div className="setting-row__info">
-              <div className="setting-row__label">Clear all data</div>
-              <div className="setting-row__desc">Remove all tracked usage history</div>
+              <div className="setting-row__label">{t('settings.data.clearAll')}</div>
+              <div className="setting-row__desc">{t('settings.data.clearAllDesc')}</div>
             </div>
             <button className="danger-button" onClick={async () => {
-              if (confirm('Are you sure? This will delete all your usage data.')) {
+              if (confirm(t('settings.data.clearConfirm'))) {
                 await clearUsageData()
                 window.location.reload()
               }
             }}>
-              Clear data
+              {t('settings.data.clearButton')}
             </button>
           </div>
         </div>
       </section>
 
       <section className="settings-section">
-        <h3>About</h3>
+        <h3>{t('settings.sections.about')}</h3>
         <div className="about-info">
           <div className="about-row">
-            <span>Version</span>
+            <span>{t('settings.about.version')}</span>
             <span>1.0.0</span>
           </div>
           <div className="about-row">
-            <span>Platform</span>
-            <span>Windows</span>
+            <span>{t('settings.about.platform')}</span>
+            <span>{t('settings.about.windows')}</span>
           </div>
           <div className="about-row">
-            <span>Built with</span>
-            <span>Electron + React</span>
+            <span>{t('settings.about.builtWith')}</span>
+            <span>{t('settings.about.techStack')}</span>
           </div>
         </div>
       </section>

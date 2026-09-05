@@ -3,11 +3,13 @@ import './App.css'
 import type { ThemeName, PageName, SuggestionItem, NotificationSummary } from './types/models'
 import type { UsageSnapshot } from './services/usageService'
 import {
+  fetchSettings,
   fetchNotificationSummary,
   fetchSuggestions,
   fetchUsageSnapshot,
 } from './services/usageService'
 import { calculateFocusScore } from './utils/analytics'
+import { useI18n } from './i18n/I18nProvider'
 import Dashboard from './pages/Dashboard'
 import Insights from './pages/Insights'
 import Apps from './pages/Apps'
@@ -16,15 +18,8 @@ import Settings from './pages/Settings'
 
 const themes: ThemeName[] = ['dark', 'light', 'tokyo', 'skin']
 
-const navItems: { id: PageName; label: string }[] = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'insights', label: 'Insights' },
-  { id: 'apps', label: 'Apps' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'settings', label: 'Settings' },
-]
-
 const App = () => {
+  const { t, setLocale, translateThemeName } = useI18n()
   const [theme, setTheme] = useState<ThemeName>(() => {
     const saved = localStorage.getItem('screenforge-theme')
     return (saved as ThemeName) || 'dark'
@@ -34,6 +29,14 @@ const App = () => {
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([])
   const [notificationSummary, setNotificationSummary] = useState<NotificationSummary | null>(null)
 
+  const navItems: { id: PageName; label: string }[] = [
+    { id: 'dashboard', label: t('nav.dashboard') },
+    { id: 'insights', label: t('nav.insights') },
+    { id: 'apps', label: t('nav.apps') },
+    { id: 'notifications', label: t('nav.notifications') },
+    { id: 'settings', label: t('nav.settings') },
+  ]
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('screenforge-theme', theme)
@@ -41,30 +44,30 @@ const App = () => {
   }, [theme])
 
   useEffect(() => {
-    let interval: number | undefined
-
     const load = async () => {
-      const [usageSnapshot, suggestionFeed, notificationFeed] = await Promise.all([
+      const [usageSnapshot, suggestionFeed, notificationFeed, settings] = await Promise.all([
         fetchUsageSnapshot(),
         fetchSuggestions(),
         fetchNotificationSummary(),
+        fetchSettings(),
       ])
 
       setSnapshot(usageSnapshot)
       setSuggestions(suggestionFeed)
       setNotificationSummary(notificationFeed)
+      setLocale(settings.language)
     }
 
     load()
-    interval = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       fetchUsageSnapshot().then(setSnapshot)
       fetchNotificationSummary().then(setNotificationSummary)
     }, 5000)
 
     return () => {
-      if (interval) window.clearInterval(interval)
+      window.clearInterval(intervalId)
     }
-  }, [])
+  }, [setLocale])
 
   // Calculate focus score using shared utility
   const focusScore = snapshot 
@@ -123,7 +126,7 @@ const App = () => {
           ))}
         </nav>
         <div className="sidebar__footer">
-          <div className="sidebar__note">Focus score</div>
+          <div className="sidebar__note">{t('sidebar.focusScore')}</div>
           <div className="sidebar__score">{focusScore}</div>
         </div>
       </aside>
@@ -137,7 +140,7 @@ const App = () => {
                 className={`theme-pill ${theme === option ? 'theme-pill--active' : ''}`}
                 onClick={() => setTheme(option)}
               >
-                {option}
+                {translateThemeName(option)}
               </button>
             ))}
           </div>
