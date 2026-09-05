@@ -133,7 +133,7 @@ export default function Header() {
             </svg>
           </a>
 
-          <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary hidden md:flex text-sm px-4 py-2">
+          <a href="/ScreenForge-1.0.1-win-x64.exe" download className="btn-primary hidden md:flex text-sm px-4 py-2">
             Download
           </a>
 
@@ -180,7 +180,7 @@ export default function Header() {
                   {link.label}
                 </a>
               ))}
-              <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary text-center mt-2">
+              <a href="/ScreenForge-1.0.1-win-x64.exe" download className="btn-primary text-center mt-2">
                 Download
               </a>
             </div>

@@ -8,7 +8,6 @@ import {
   fetchSuggestions,
   fetchUsageSnapshot,
 } from './services/usageService'
-import { calculateFocusScore } from './utils/analytics'
 import { useI18n } from './i18n/I18nProvider'
 import Dashboard from './pages/Dashboard'
 import Insights from './pages/Insights'
@@ -69,11 +68,6 @@ const App = () => {
     }
   }, [setLocale])
 
-  // Calculate focus score using shared utility
-  const focusScore = snapshot 
-    ? calculateFocusScore(snapshot.usageEntries, snapshot.apps) 
-    : 0
-
   const renderPage = () => {
     switch (page) {
       case 'dashboard':
@@ -125,10 +119,6 @@ const App = () => {
             </button>
           ))}
         </nav>
-        <div className="sidebar__footer">
-          <div className="sidebar__note">{t('sidebar.focusScore')}</div>
-          <div className="sidebar__score">{focusScore}</div>
-        </div>
       </aside>
 
       <main className="main">

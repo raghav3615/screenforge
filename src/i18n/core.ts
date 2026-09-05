@@ -8,7 +8,7 @@ const dictionaries: Record<LocaleCode, TranslationTree> = {
   'en-US': enUS,
 }
 
-export const defaultLocale: LocaleCode = 'zh-CN'
+export const defaultLocale: LocaleCode = 'en-US'
 
 export const normalizeLocale = (value?: string | null): LocaleCode => {
   if (!value) return defaultLocale
@@ -44,10 +44,10 @@ export const translate = (locale: LocaleCode, key: string, params?: Record<strin
   return interpolate(template, params)
 }
 
-export const getLocaleOptions = (): Array<{ code: LocaleCode; label: string }> =>
+export const getLocaleOptions = (locale: LocaleCode): Array<{ code: LocaleCode; label: string }> =>
   supportedLocales.map((code) => ({
     code,
-    label: translate(code, `locales.${code}`),
+    label: translate(locale, `locales.${code}`),
   }))
 
 export const translateThemeName = (locale: LocaleCode, theme: ThemeName) =>

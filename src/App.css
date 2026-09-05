@@ -87,34 +87,6 @@
   color: var(--accent);
 }
 
-.sidebar__footer {
-  margin-top: auto;
-  padding: 16px;
-  border-radius: 12px;
-  background: var(--panel-bg);
-  border: 1px solid var(--card-border);
-  display: grid;
-  gap: 4px;
-}
-
-.sidebar__note {
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.sidebar__score {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--accent), var(--success));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 /* ========================================
    MAIN CONTENT
    ======================================== */
@@ -403,10 +375,6 @@
   .sidebar__nav {
     flex-direction: row;
     flex-wrap: wrap;
-  }
-
-  .sidebar__footer {
-    display: none;
   }
 
   .stats-grid {

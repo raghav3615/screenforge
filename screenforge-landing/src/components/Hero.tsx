@@ -41,7 +41,6 @@ export default function Hero() {
       >
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-8 items-center">
           <div className="order-2 lg:order-1">
-
             <motion.div variants={itemVariants} className="flex items-center gap-2 mb-6">
               <span className="inline-flex items-center px-3 py-1.5 rounded-md bg-[var(--bg-secondary)] border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)]">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true" />
@@ -88,7 +87,7 @@ export default function Hero() {
               variants={itemVariants}
               className="flex flex-wrap items-center gap-3"
             >
-              <a href="/ScreenForge-1.0.0-win-x64.exe" download className="btn-primary">
+              <a href="/ScreenForge-1.0.1-win-x64.exe" download className="btn-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
                 </svg>

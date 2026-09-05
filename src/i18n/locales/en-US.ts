@@ -14,7 +14,7 @@ export const enUS = {
     unknown: 'Unknown',
   },
   locales: {
-    'zh-CN': '简体中文',
+    'zh-CN': 'Chinese',
     'en-US': 'English',
   },
   nav: {
