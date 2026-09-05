@@ -1,0 +1,2 @@
+public/ScreenForge-1.0.1-win-x64.exe filter=lfs diff=lfs merge=lfs -text
+screenforge-landing/public/ScreenForge-1.0.1-win-x64.exe filter=lfs diff=lfs merge=lfs -text

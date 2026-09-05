@@ -788,7 +788,7 @@ var enUS = {
     unknown: "Unknown"
   },
   locales: {
-    "zh-CN": "\u7B80\u4F53\u4E2D\u6587",
+    "zh-CN": "Chinese",
     "en-US": "English"
   },
   nav: {
@@ -1410,14 +1410,14 @@ var zhCN = {
 };
 
 // src/i18n/types.ts
-var supportedLocales = ["zh-CN", "en-US"];
+var supportedLocales = ["en-US", "zh-CN"];
 
 // src/i18n/core.ts
 var dictionaries = {
   "zh-CN": zhCN,
   "en-US": enUS
 };
-var defaultLocale = "zh-CN";
+var defaultLocale = "en-US";
 var normalizeLocale = (value) => {
   if (!value) return defaultLocale;
   if (supportedLocales.includes(value)) return value;

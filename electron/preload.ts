@@ -80,7 +80,7 @@ const api = {
         startWithWindows: false,
         timeLimits: [],
         timeLimitNotificationsEnabled: true,
-        language: 'zh-CN',
+        language: 'en-US',
       }
     }
   },
@@ -93,7 +93,7 @@ const api = {
         startWithWindows: false,
         timeLimits: [],
         timeLimitNotificationsEnabled: true,
-        language: 'zh-CN',
+        language: 'en-US',
       }
     }
   },

@@ -42,7 +42,7 @@ const getInitialLocale = (): LocaleCode => {
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY)
   if (stored) return normalizeLocale(stored)
 
-  return normalizeLocale(window.navigator.language)
+  return defaultLocale
 }
 
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
@@ -67,7 +67,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     translateCategory: (category) => translateCategoryLabel(locale, category),
     translateThemeName: (theme) => translateThemeName(locale, theme),
     translateThemeDescription: (theme) => translateThemeDescription(locale, theme),
-    localeOptions: getLocaleOptions(),
+    localeOptions: getLocaleOptions(locale),
   }), [locale, setLocale])
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>

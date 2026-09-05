@@ -118,8 +118,8 @@ export default function RootLayout({
       name: 'Raghav Dadhich',
       url: 'https://ragzus.me',
     },
-    softwareVersion: '1.0.0',
-    downloadUrl: 'https://screenforge.app/ScreenForge-1.0.0-win-x64.exe',
+    softwareVersion: '1.0.1',
+    downloadUrl: 'https://screenforge.app/ScreenForge-1.0.1-win-x64.exe',
     screenshot: 'https://screenforge.app/hero-thumbnail.png',
     featureList: [
       'Screen time tracking',

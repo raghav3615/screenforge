@@ -1,7 +1,7 @@
 {
   "name": "screenforge",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Windows screen time dashboard that tracks app usage, notifications, and provides productivity insights",
   "author": {
     "name": "Raghav Dadhich",
@@ -71,6 +71,7 @@
     "compression": "maximum",
     "files": [
       "dist/**",
+      "!dist/ScreenForge-*.exe",
       "dist-electron/**",
       "package.json"
     ],
