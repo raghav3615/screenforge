@@ -11,8 +11,8 @@ export default function Footer() {
   const label = formatStars(stars)
 
   return (
-    <footer id="download" className="border-t border-[var(--line)]" role="contentinfo">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-10">
+    <footer id="download" className="border-t border-[var(--line)] overflow-hidden" role="contentinfo">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-20">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -82,7 +82,7 @@ export default function Footer() {
           <nav aria-label="Meta">
             <h3 className="font-mono text-[11px] tracking-[0.14em] text-[var(--text-3)] uppercase">Meta</h3>
             <ul className="mt-4 space-y-2.5 text-[13.5px]">
-              <li><a className="text-[var(--text-2)] hover:text-[var(--text-1)]" href="https://ragzus.me" target="_blank" rel="noopener noreferrer">Author</a></li>
+              <li><a className="text-[var(--text-2)] hover:text-[var(--text-1)]" href="https://ragzus.tech" target="_blank" rel="noopener noreferrer">Author</a></li>
               <li><span className="text-[var(--text-2)]">MIT License</span></li>
               <li><span className="font-mono text-[12px] text-[var(--text-3)]">v1.0.1 · win-x64</span></li>
             </ul>
@@ -91,10 +91,10 @@ export default function Footer() {
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[var(--line)] pt-6">
           <p className="text-[12px] text-[var(--text-3)]">© {new Date().getFullYear()} ScreenForge · Open source under MIT.</p>
-          <p className="text-[12px] text-[var(--text-3)]">Forged on Windows by <a href="https://ragzus.me/" target="_blank" rel="noopener noreferrer" className="text-[var(--text-1)] hover:underline">Raghav Dadhich</a></p>
+          <p className="text-[12px] text-[var(--text-3)]">Forged on Windows by <a href="https://ragzus.tech/" target="_blank" rel="noopener noreferrer" className="text-[var(--text-1)] hover:underline">Raghav Dadhich</a></p>
         </div>
 
-        <div aria-hidden="true" className="wordmark-giant mt-8 text-center text-[13.5vw] leading-none tracking-tight">SCREENFORGE</div>
+        <div aria-hidden="true" className="wordmark-giant mt-10 select-none text-center text-[19vw] sm:text-[15vw] lg:text-[13.5vw] leading-[0.8] tracking-[-0.05em] translate-y-[0.08em]">SCREENFORGE</div>
       </div>
     </footer>
   )
