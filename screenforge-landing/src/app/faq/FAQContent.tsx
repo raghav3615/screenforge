@@ -65,18 +65,18 @@ function FAQItem({ faq, index }: { faq: typeof faqs[0]; index: number }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-50px' }}
             transition={{ duration: 0.4, delay: index * 0.05 }}
-            className="border-b border-[var(--border)] last:border-0"
+            className="border-b border-[var(--line)] last:border-0"
         >
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full py-6 text-left flex items-start justify-between gap-4 group"
                 aria-expanded={isOpen}
             >
-                <h3 className="text-lg font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors flex-1">
+                <h3 className="text-lg font-semibold text-[var(--text-1)] group-hover:text-[var(--forge-ink)] transition-colors flex-1">
                     {faq.question}
                 </h3>
                 <svg
-                    className={`w-5 h-5 shrink-0 text-[var(--text-muted)] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                    className={`w-5 h-5 shrink-0 text-[var(--text-3)] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -92,7 +92,7 @@ function FAQItem({ faq, index }: { faq: typeof faqs[0]; index: number }) {
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
             >
-                <p className="pb-6 text-[var(--text-secondary)] leading-relaxed">
+                <p className="pb-6 text-[var(--text-2)] leading-relaxed">
                     {faq.answer}
                 </p>
             </motion.div>
@@ -101,10 +101,21 @@ function FAQItem({ faq, index }: { faq: typeof faqs[0]; index: number }) {
 }
 
 export default function FAQContent() {
+    const faqJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.question,
+            acceptedAnswer: { '@type': 'Answer', text: f.answer },
+        })),
+    }
+
     return (
         <main className="min-h-screen">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
             <Header />
-            <section className="pt-24 pb-20" aria-labelledby="faq-title">
+            <section className="pt-32 pb-20" aria-labelledby="faq-title">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6">
                     <motion.header
                         initial={{ opacity: 0, y: 30 }}
@@ -112,18 +123,19 @@ export default function FAQContent() {
                         transition={{ duration: 0.6 }}
                         className="text-center mb-16"
                     >
-                        <div className="inline-flex items-center gap-3 mb-6">
-                            <h1 id="faq-title" className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-                                Frequently Asked Questions
+                        <div className="eyebrow text-[var(--forge-ink)] mb-4">— Support</div>
+                        <div className="inline-flex items-center gap-3 mb-4">
+                            <h1 id="faq-title" className="display text-4xl sm:text-5xl">
+                                Questions, answered.
                             </h1>
                         </div>
-                        <p className="text-lg text-[var(--text-secondary)] max-w-xl mx-auto">
+                        <p className="text-lg text-[var(--text-2)] max-w-xl mx-auto">
                             Everything you need to know about ScreenForge. Can&apos;t find what you&apos;re looking for?{' '}
                             <a
                                 href="https://github.com/raghav3615/screenforge/issues"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[var(--accent)] hover:underline"
+                                className="text-[var(--forge-ink)] hover:underline"
                             >
                                 Open an issue on GitHub
                             </a>

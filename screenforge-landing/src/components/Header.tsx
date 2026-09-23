@@ -1,13 +1,15 @@
 'use client'
 
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from 'next-themes'
 import Image from 'next/image'
-import clsx from 'clsx'
+import { useGithubStars, formatStars } from '@/lib/useGithubStars'
 
 const navLinks = [
   { label: 'Features', href: '/#features' },
+  { label: 'Product', href: '/#product' },
+  { label: 'Compare', href: '/#compare' },
   { label: 'FAQ', href: '/faq' },
 ]
 
@@ -16,177 +18,115 @@ const subscribe = () => () => {}
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [stars, setStars] = useState<number | null>(null)
+  const [open, setOpen] = useState(false)
+  const stars = useGithubStars()
+  const label = formatStars(stars)
   const { theme, setTheme } = useTheme()
   const mounted = useSyncExternalStore(subscribe, () => true, () => false)
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-
-    fetch(`https://api.github.com/repos/${GITHUB_REPO}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.stargazers_count !== undefined) {
-          setStars(data.stargazers_count)
-        }
-      })
-      .catch(() => { })
-
-    return () => window.removeEventListener('scroll', handleScroll)
+    const onScroll = () => setScrolled(window.scrollY > 16)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark')
-  }
 
   return (
     <motion.header
-      initial={{ y: -100, opacity: 0 }}
+      initial={{ y: -64, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className={clsx(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        scrolled
-          ? 'bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--border)]'
-          : 'bg-transparent'
-      )}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed top-0 left-0 right-0 z-50"
     >
-      <nav className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between" aria-label="Main navigation">
-        <a href="/" className="flex items-center gap-2.5" aria-label="ScreenForge Home">
-          <Image
-            src="/logo.png"
-            alt="ScreenForge Logo"
-            width={32}
-            height={32}
-            className="rounded-lg"
-            priority
-          />
-          <span className="text-base font-semibold tracking-tight">ScreenForge</span>
-        </a>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4">
+        <nav
+          aria-label="Main"
+          className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 transition-all duration-300 ${
+            scrolled
+              ? 'border-[var(--line-strong)] bg-[var(--bg)]/85 backdrop-blur-xl shadow-[0_8px_32px_-12px_rgba(0,0,0,0.35)]'
+              : 'border-transparent bg-transparent'
+          }`}
+        >
+          <a href="/" className="flex items-center gap-2.5" aria-label="ScreenForge home">
+            <Image src="/logo.png" alt="ScreenForge" width={28} height={28} className="rounded-[8px]" priority />
+            <span className="font-display text-[15px] font-semibold tracking-[-0.02em]">ScreenForge</span>
+            <span className="hidden sm:inline-flex font-mono text-[10px] tracking-[0.12em] text-[var(--text-3)] border border-[var(--line)] rounded-md px-1.5 py-0.5 ml-1">V1.0.1</span>
+          </a>
 
-        <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
+          <div className="hidden md:flex items-center gap-1">
+            {navLinks.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="px-3 py-1.5 text-[13.5px] font-medium text-[var(--text-2)] hover:text-[var(--text-1)] rounded-lg hover:bg-[var(--panel-2)] transition-colors"
+              >
+                {l.label}
+              </a>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
             <a
-              key={link.href}
-              href={link.href}
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              href={`https://github.com/${GITHUB_REPO}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-2 rounded-[10px] border border-[var(--line)] bg-[var(--panel)] px-3 py-2 text-[13px] font-medium hover:border-[var(--line-strong)] transition-colors"
+              aria-label={stars !== null ? `${stars} stars on GitHub` : 'Star on GitHub'}
             >
-              {link.label}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z" /></svg>
+              <span className="tabular-nums min-w-[2ch] inline-block text-right">{label ?? '–'}</span>
             </a>
-          ))}
-        </div>
 
-        <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
-          <a
-            href={`https://github.com/${GITHUB_REPO}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="github-stars hidden sm:flex"
-            aria-label={`${stars ?? 0} stars on GitHub`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z" />
-            </svg>
-            <span>{stars !== null ? stars : '–'}</span>
-            <span className="hidden lg:inline">stars on Github</span>
-          </a>
+            {mounted && (
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-9 h-9 rounded-[10px] flex items-center justify-center border border-[var(--line)] bg-[var(--panel)] hover:border-[var(--line-strong)] transition-colors"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                )}
+              </button>
+            )}
 
-          {mounted && (
+            <a href="/ScreenForge-1.0.1-win-x64.exe" download className="btn-primary !py-2 !px-4 hidden md:inline-flex">
+              Download
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            </a>
+
             <button
-              onClick={toggleTheme}
-              className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors"
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              onClick={() => setOpen(!open)}
+              className="md:hidden w-9 h-9 rounded-[10px] flex items-center justify-center border border-[var(--line)] bg-[var(--panel)]"
+              aria-label={open ? 'Close menu' : 'Open menu'}
+              aria-expanded={open}
             >
-              {theme === 'dark' ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" />
-                  <line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" />
-                  <line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                </svg>
-              )}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                {open ? (<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>) : (<><line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" /></>)}
+              </svg>
             </button>
-          )}
+          </div>
+        </nav>
 
-          <a
-            href="https://x.com/raghav_dadhich"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors hidden md:flex"
-            aria-label="Follow on X (Twitter)"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-          </a>
-
-          <a href="/ScreenForge-1.0.1-win-x64.exe" download className="btn-primary hidden md:flex text-sm px-4 py-2">
-            Download
-          </a>
-
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileMenuOpen}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              {mobileMenuOpen ? (
-                <>
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </>
-              ) : (
-                <>
-                  <line x1="4" y1="6" x2="20" y2="6" />
-                  <line x1="4" y1="12" x2="20" y2="12" />
-                  <line x1="4" y1="18" x2="20" y2="18" />
-                </>
-              )}
-            </svg>
-          </button>
-        </div>
-      </nav>
-
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-[var(--bg-primary)] border-t border-[var(--border)]"
-          >
-            <div className="px-4 py-4 flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors py-2"
-                >
-                  {link.label}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden mt-2 rounded-2xl border border-[var(--line-strong)] bg-[var(--bg)]/95 backdrop-blur-xl p-2"
+            >
+              {navLinks.map((l) => (
+                <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="block px-4 py-3 text-sm font-medium text-[var(--text-2)] hover:text-[var(--text-1)] rounded-xl hover:bg-[var(--panel-2)]">
+                  {l.label}
                 </a>
               ))}
-              <a href="/ScreenForge-1.0.1-win-x64.exe" download className="btn-primary text-center mt-2">
-                Download
-              </a>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <a href="/ScreenForge-1.0.1-win-x64.exe" download className="btn-primary w-full mt-2">Download for Windows</a>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.header>
   )
 }
